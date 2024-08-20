@@ -9,7 +9,6 @@ static DJIMotorInstance *dji_motor_instance[DJI_MOTOR_CNT] = {NULL}; // 会在co
 
 
 #ifdef FDCAN
-
 static CANInstance sender_assignment[9] = {
     [0] = {.can_handle = &hfdcan1, .txconf.Identifier = 0x1ff, .txconf.IdType = FDCAN_STANDARD_ID, .txconf.TxFrameType = FDCAN_DATA_FRAME, .txconf.DataLength = FDCAN_DLC_BYTES_8, .txconf.FDFormat = FDCAN_CLASSIC_CAN,.txconf.BitRateSwitch = FDCAN_BRS_OFF, .tx_buff = {0}},
     [1] = {.can_handle = &hfdcan1, .txconf.Identifier = 0x200, .txconf.IdType = FDCAN_STANDARD_ID, .txconf.TxFrameType = FDCAN_DATA_FRAME, .txconf.DataLength = FDCAN_DLC_BYTES_8, .txconf.FDFormat = FDCAN_CLASSIC_CAN,.txconf.BitRateSwitch = FDCAN_BRS_OFF, .tx_buff = {0}},
@@ -51,7 +50,7 @@ static CANInstance sender_assignment[6] = {
  * @brief 6个用于确认是否有电机注册到sender_assignment中的标志位,防止发送空帧,此变量将在DJIMotorControl()使用
  *        flag的初始化在 MotorSenderGrouping()中进行
  */
-static uint8_t sender_enable_flag[6] = {0};
+static uint8_t sender_enable_flag[9] = {0};
 
 /**
  * @brief 根据电调/拨码开关上的ID,根据说明书的默认id分配方式计算发送ID和接收ID,
@@ -63,6 +62,21 @@ static void MotorSenderGrouping(DJIMotorInstance *motor, CAN_Init_Config_s *conf
     uint8_t motor_send_num;
     uint8_t motor_grouping;
 
+    uint8_t grouping_offset;
+    //通过CAN计算分组偏移量
+    if(config->can_handle == &hcan1)
+    {
+        grouping_offset=0;
+    }
+    else if(config->can_handle == &hcan2)
+    {
+        grouping_offset=3;
+    }
+    else
+    {
+        grouping_offset=6;
+    }
+
     switch (motor->motor_type)
     {
     case M2006:
@@ -70,12 +84,13 @@ static void MotorSenderGrouping(DJIMotorInstance *motor, CAN_Init_Config_s *conf
         if (motor_id < 4) // 根据ID分组
         {
             motor_send_num = motor_id;
-            motor_grouping = config->can_handle == &hcan1 ? 1 : 4;
+            motor_grouping = grouping_offset + 1;
+            
         }
         else
         {
             motor_send_num = motor_id - 4;
-            motor_grouping = config->can_handle == &hcan1 ? 0 : 3;
+            motor_grouping = grouping_offset + 0;
         }
 
         // 计算接收id并设置分组发送id
@@ -101,12 +116,12 @@ static void MotorSenderGrouping(DJIMotorInstance *motor, CAN_Init_Config_s *conf
         if (motor_id < 4)
         {
             motor_send_num = motor_id;
-            motor_grouping = config->can_handle == &hcan1 ? 0 : 3;
+            motor_grouping = grouping_offset + 0;
         }
         else
         {
             motor_send_num = motor_id - 4;
-            motor_grouping = config->can_handle == &hcan1 ? 2 : 5;
+            motor_grouping = grouping_offset + 2;
         }
 
         config->rx_id = 0x204 + motor_id + 1;   // 把ID+1,进行分组设置
@@ -323,7 +338,11 @@ void DJIMotorControl()
     }
 
     // 遍历flag,检查是否要发送这一帧报文
+#ifdef FDCAN
+    for (size_t i = 0; i < 9; ++i)
+#else
     for (size_t i = 0; i < 6; ++i)
+#endif
     {
         if (sender_enable_flag[i])
         {

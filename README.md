@@ -10,6 +10,8 @@
 
 达妙MC-02开发板资料仓库链接：https://gitee.com/kit-miao/dm-mc02
 
+如果要使用JLink调试，建议采用JLink V9以上版本，因为V7或OB版本不支持H7系列MCU的调试。V8暂未测试。
+
 以下是原来的框架说明：
 
 ------
