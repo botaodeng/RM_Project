@@ -1,4 +1,4 @@
-# basic_framework for MC_02 development board
+# basic_framework for DM-MC02 
 
 为基于H723VGT6主控的达妙MC02开发板移植的湖大跃鹿战队电控通用嵌入式框架。
 
