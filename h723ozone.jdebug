@@ -22,14 +22,13 @@ void OnProjectLoad (void) {
   //
   // Dialog-generated settings
   //
-  Project.AddPathSubstitute ("D:/STM32_RM/MovetoH7/basic_framework_MC02_1", "$(ProjectDir)");
-  Project.AddPathSubstitute ("d:/stm32_rm/movetoh7/basic_framework_mc02_1", "$(ProjectDir)");
+  //Project.AddPathSubstitute ("$(ProjectDir)");
   Project.SetDevice ("STM32H723VG");
   Project.SetHostIF ("USB", "20781320");
   Project.SetTargetIF ("SWD");
   Project.SetTIFSpeed ("4 MHz");
   Project.AddSvdFile ("$(InstallDir)/Config/CPU/Cortex-M7F.svd");
-  Project.AddSvdFile ("$(InstallDir)/Config/Peripherals/STM32H7x3.svd");
+  Project.AddSvdFile ("$(ProjectDir)/STM32H723.svd");
   //
   // User settings
   //
