@@ -121,7 +121,6 @@ modules/BMI088/bmi088.c \
 modules/imu/BMI088driver.c \
 modules/imu/BMI088Middleware.c \
 modules/imu/ins_task.c \
-modules/ist8310/ist8310.c \
 modules/master_machine/master_process.c \
 modules/master_machine/seasky_protocol.c \
 modules/motor/DJImotor/dji_motor.c \
@@ -241,7 +240,6 @@ C_INCLUDES =  \
 -Imodules/bluetooth \
 -Imodules/BMI088 \
 -Imodules/imu \
--Imodules/ist8310 \
 -Imodules/master_machine \
 -Imodules/motor/DJImotor \
 -Imodules/motor/LKmotor \
@@ -258,7 +256,7 @@ C_INCLUDES =  \
 -Imodules/message_center \
 -Imodules/daemon \
 -Imodules/alarm \
--Imodules  \
+-Imodules \
 -IMiddlewares/ST/ARM/DSP/Inc \
 -IMiddlewares/ST/ARM/DSP/Include/dsp \
 -IMiddlewares/Third_Party/SEGGER/RTT \

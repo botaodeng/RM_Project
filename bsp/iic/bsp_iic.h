@@ -1,7 +1,7 @@
 #include "i2c.h"
 #include "stdint.h"
 
-#define IIC_DEVICE_CNT 1   // C板引出了I2C2和I2C3
+#define IIC_DEVICE_CNT 1   // MC02只有1个I2C接口可用，
 #define MX_IIC_SLAVE_CNT 8 // 最大从机数目,根据需要修改
 
 /* i2c 工作模式枚举 */
