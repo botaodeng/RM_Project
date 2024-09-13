@@ -268,10 +268,20 @@ void CANSetDLC(CANInstance *_instance, uint8_t length)
 static void FDCANFIFOxCallback(FDCAN_HandleTypeDef *_hfdcan, uint32_t fifox)
 {
     static FDCAN_RxHeaderTypeDef rxconf; // 同上
-    uint8_t fdcan_rx_buff[8];
+	static uint16_t DataLength = 0;
+    static uint8_t fdcan_rx_buff[8];
     while (HAL_FDCAN_GetRxFifoFillLevel(_hfdcan, fifox)) // FIFO不为空,有可能在其他中断时有多帧数据进入
     {
         HAL_FDCAN_GetRxMessage(_hfdcan, fifox, &rxconf, fdcan_rx_buff); // 从FIFO中获取数据
+		//解析数据长度
+		if(((rxconf.DataLength >> 16) & 0xF)>=0 && ((rxconf.DataLength >> 16) & 0xF)<=8)
+		{
+			DataLength=(rxconf.DataLength >> 16) & 0xF; // 保存接收到的数据长度
+		}
+		else
+		{
+			DataLength=0;
+		}
         if(rxconf.RxFrameType==FDCAN_DATA_FRAME && rxconf.IdType==FDCAN_STANDARD_ID)
         {
         	for (size_t i = 0; i < idx; ++i)
@@ -281,8 +291,8 @@ static void FDCANFIFOxCallback(FDCAN_HandleTypeDef *_hfdcan, uint32_t fifox)
 				{
 					if (can_instance[i]->can_module_callback != NULL) // 回调函数不为空就调用
 					{
-						can_instance[i]->rx_len = rxconf.DataLength;               // 保存接收到的数据长度
-						memcpy(can_instance[i]->rx_buff, fdcan_rx_buff, rxconf.DataLength); // 消息拷贝到对应实例
+						can_instance[i]->rx_len = DataLength;               // 保存接收到的数据长度
+						memcpy(can_instance[i]->rx_buff, fdcan_rx_buff, can_instance[i]->rx_len); // 消息拷贝到对应实例
 						can_instance[i]->can_module_callback(can_instance[i]);     // 触发回调进行数据解析和处理
 					}
 					return;
