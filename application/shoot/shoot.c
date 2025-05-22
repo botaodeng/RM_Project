@@ -2,6 +2,7 @@
 #include "robot_def.h"
 
 #include "dji_motor.h"
+#include "snail_motor.h"
 #include "message_center.h"
 #include "bsp_dwt.h"
 #include "general_def.h"
@@ -63,7 +64,7 @@ void ShootInit()
     Motor_Init_Config_s loader_config = {
         .can_init_config = {
             .can_handle = &hcan2,
-            .tx_id = 3,
+            .tx_id = 7,
         },
         .controller_param_init_config = {
             .angle_PID = {
