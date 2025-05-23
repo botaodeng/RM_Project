@@ -21,6 +21,9 @@ static float hibernate_time = 0, dead_time = 0;
 
 void ShootInit()
 {
+    
+    /*
+    //CAN 摩擦轮
     // 左摩擦轮
     Motor_Init_Config_s friction_config = {
         .can_init_config = {
@@ -59,6 +62,12 @@ void ShootInit()
     friction_config.can_init_config.tx_id = 2; // 右摩擦轮,改txid和方向就行
     friction_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_REVERSE;
     friction_r = DJIMotorInit(&friction_config);
+
+    */
+
+    // PWM 摩擦轮
+    // 左摩擦轮
+    
 
     // 拨盘电机
     Motor_Init_Config_s loader_config = {

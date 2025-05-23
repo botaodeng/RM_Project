@@ -254,6 +254,7 @@ C_INCLUDES =  \
 -Imodules/motor/LKmotor \
 -Imodules/motor/HTmotor \
 -Imodules/motor/step_motor \
+-Imodules/motor/SNAILmotor \
 -Imodules/motor/servo_motor \
 -Imodules/motor/DMmotor \
 -Imodules/motor \
