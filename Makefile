@@ -138,6 +138,7 @@ modules/motor/LKmotor/LK9025.c \
 modules/motor/DMmotor/dmmotor.c \
 modules/motor/step_motor/step_motor.c \
 modules/motor/servo_motor/servo_motor.c \
+modules/motor/SNAILmotor/snail_motor.c \
 modules/motor/motor_task.c \
 modules/oled/oled.c \
 modules/referee/crc_ref.c \

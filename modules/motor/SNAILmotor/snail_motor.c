@@ -5,7 +5,7 @@
 
 static uint8_t idx = 0; // register idx,是该文件的全局电机索引,在注册时使用
 /* SNAIL电机的实例,此处仅保存指针,内存的分配将通过电机实例初始化时通过malloc()进行 */
-static SNAILMotorInstance *SNAIL_motor_instance
+static SNAILMotorInstance *SNAIL_motor_instance;
 
 // 电机初始化,返回一个电机实例
 SNAILMotorInstance *SNAILMotorInit(PWM_Motor_Init_Config_s *config)
