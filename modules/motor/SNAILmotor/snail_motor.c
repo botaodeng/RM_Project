@@ -8,7 +8,7 @@ static uint8_t idx = 0; // register idx,是该文件的全局电机索引,在注
 static SNAILMotorInstance *SNAIL_motor_instance
 
 // 电机初始化,返回一个电机实例
-SNAILMotorInstance *SNAILMotorInit(Motor_Init_Config_s *config)
+SNAILMotorInstance *SNAILMotorInit(PWM_Motor_Init_Config_s *config)
 {
     SNAILMotorInstance *instance = (SNAILMotorInstance *)malloc(sizeof(SNAILMotorInstance));
     memset(instance, 0, sizeof(SNAILMotorInstance));
@@ -20,6 +20,18 @@ SNAILMotorInstance *SNAILMotorInit(Motor_Init_Config_s *config)
     instance->motor_pwm_instance = PWMRegister(&config->pwm_init_config);
 
     return instance;
+}
+
+void SNAILMotorSetRef(SNAILMotorInstance *motor, float ref)
+{
+    if (motor->stop_flag == MOTOR_STOP)
+    {
+        PWMSetDutyRatio(motor->motor_pwm_instance, 0.0f); // 停止电机
+    }
+    else
+    {
+        PWMSetDutyRatio(motor->motor_pwm_instance, ref); // 设置占空比
+    }
 }
 
 void SNAILMotorStop(SNAILMotorInstance *motor)

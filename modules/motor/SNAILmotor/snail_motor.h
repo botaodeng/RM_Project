@@ -16,6 +16,7 @@
 
 #include "bsp_pwm.h"
 #include "controller.h"
+#include "motor_def.h"
 #include "stdint.h"
 #include "daemon.h"
 
@@ -50,7 +51,15 @@ typedef struct
  *
  * @return DJIMotorInstance*
  */
-SNAILMotorInstance *SNAILMotorInit(Motor_Init_Config_s *config);
+SNAILMotorInstance *SNAILMotorInit(PWM_Motor_Init_Config_s *config);
+
+/**
+ * @brief 被application层的应用调用,给电机设定参考值.
+ * @note 该函数会直接设置PWM占空比,如果电机处于停止状态,则会将占空比设置为0
+ * @param motor 要设置的电机
+ * @param ref 设定参考值
+ */
+void SNAILMotorSetRef(SNAILMotorInstance *motor, float ref);
 
 /**
  * @brief 该函数被motor_task调用运行在rtos上,motor_stask内通过osDelay()确定控制频率
@@ -58,7 +67,7 @@ SNAILMotorInstance *SNAILMotorInit(Motor_Init_Config_s *config);
 void SNAILMotorControl();
 
 /**
- * @brief 停止电机,注意不是将设定值设为零,而是直接给电机发送的电流值置零
+ * @brief 停止电机
  *
  */
 void SNAILMotorStop(SNAILMotorInstance *motor);

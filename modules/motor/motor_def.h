@@ -14,6 +14,7 @@
 
 #include "controller.h"
 #include "stdint.h"
+#include "bsp_pwm.h"
 
 #define LIMIT_MIN_MAX(x, min, max) (x) = (((x) <= (min)) ? (min) : (((x) >= (max)) ? (max) : (x)))
 
@@ -106,6 +107,7 @@ typedef enum
     M2006,
     LK9025,
     HT04,
+    SNAIL2305,
 } Motor_Type_e;
 
 /**
@@ -134,5 +136,14 @@ typedef struct
     Motor_Type_e motor_type;
     CAN_Init_Config_s can_init_config;
 } Motor_Init_Config_s;
+
+/* 用于初始化PWM电机的结构体,各类电机通用 */
+typedef struct
+{
+    Motor_Controller_Init_s controller_param_init_config;
+    Motor_Control_Setting_s controller_setting_init_config;
+    Motor_Type_e motor_type;
+    PWM_Init_Config_s pwm_init_config;
+} PWM_Motor_Init_Config_s;
 
 #endif // !MOTOR_DEF_H

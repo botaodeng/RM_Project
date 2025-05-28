@@ -8,7 +8,8 @@
 #include "general_def.h"
 
 /* 对于双发射机构的机器人,将下面的数据封装成结构体即可,生成两份shoot应用实例 */
-static DJIMotorInstance *friction_l, *friction_r, *loader; // 拨盘电机
+static DJIMotorInstance *loader; // 拨盘电机
+static SNAILMotorInstance *friction_l, *friction_r; // 左摩擦轮
 // static servo_instance *lid; 需要增加弹舱盖
 
 static Publisher_t *shoot_pub;
@@ -67,6 +68,19 @@ void ShootInit()
 
     // PWM 摩擦轮
     // 左摩擦轮
+    PWM_Motor_Init_Config_s friction_config = {
+        .pwm_init_config = {
+            .htim = &htim1,
+            .channel = TIM_CHANNEL_1,
+            .period = 0.02f, // 20ms周期
+            .dutyratio = 0.0f, // 初始占空比为0
+        },
+        .motor_type = SNAIL2305,
+    };
+    friction_l = SNAILMotorInit(&friction_config);
+
+    friction_config.pwm_init_config.channel = TIM_CHANNEL_2; // 右摩擦轮,改通道和方向就行
+    friction_r = SNAILMotorInit(&friction_config);
     
 
     // 拨盘电机
@@ -123,14 +137,14 @@ void ShootTask()
     // 对shoot mode等于SHOOT_STOP的情况特殊处理,直接停止所有电机(紧急停止)
     if (shoot_cmd_recv.shoot_mode == SHOOT_OFF)
     {
-        DJIMotorStop(friction_l);
-        DJIMotorStop(friction_r);
+        SNAILMotorStop(friction_l);
+        SNAILMotorStop(friction_r);
         DJIMotorStop(loader);
     }
     else // 恢复运行
     {
-        DJIMotorEnable(friction_l);
-        DJIMotorEnable(friction_r);
+        SNAILMotorEnable(friction_l);
+        SNAILMotorEnable(friction_r);
         DJIMotorEnable(loader);
     }
 
@@ -185,27 +199,27 @@ void ShootTask()
         switch (shoot_cmd_recv.bullet_speed)
         {
         case SMALL_AMU_15:
-            DJIMotorSetRef(friction_l, 0);
-            DJIMotorSetRef(friction_r, 0);
+            SNAILMotorSetRef(friction_l, 0);
+            SNAILMotorSetRef(friction_r, 0);
             break;
         case SMALL_AMU_18:
-            DJIMotorSetRef(friction_l, 0);
-            DJIMotorSetRef(friction_r, 0);
+            SNAILMotorSetRef(friction_l, 0);
+            SNAILMotorSetRef(friction_r, 0);
             break;
         case SMALL_AMU_30:
-            DJIMotorSetRef(friction_l, 0);
-            DJIMotorSetRef(friction_r, 0);
+            SNAILMotorSetRef(friction_l, 0);
+            SNAILMotorSetRef(friction_r, 0);
             break;
         default: // 当前为了调试设定的默认值4000,因为还没有加入裁判系统无法读取弹速.
-            DJIMotorSetRef(friction_l, 30000);
-            DJIMotorSetRef(friction_r, 30000);
+            SNAILMotorSetRef(friction_l, 0.9f);
+            SNAILMotorSetRef(friction_r, 0.9f);
             break;
         }
     }
     else // 关闭摩擦轮
     {
-        DJIMotorSetRef(friction_l, 0);
-        DJIMotorSetRef(friction_r, 0);
+        SNAILMotorSetRef(friction_l, 0);
+        SNAILMotorSetRef(friction_r, 0);
     }
 
     // 开关弹舱盖
