@@ -39,6 +39,7 @@ PWMInstance *PWMRegister(PWM_Init_Config_s *config)
     pwm->callback = config->callback;
     pwm->id = config->id;
     pwm->tclk = PWMSelectTclk(pwm->htim);
+
     // 启动PWM
     HAL_TIM_PWM_Start(pwm->htim, pwm->channel);
     PWMSetPeriod(pwm, pwm->period);

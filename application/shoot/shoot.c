@@ -72,14 +72,14 @@ void ShootInit()
         .pwm_init_config = {
             .htim = &htim1,
             .channel = TIM_CHANNEL_1,
-            .period = 0.02f, // 20ms周期
-            .dutyratio = 0.0f, // 初始占空比为0
+            .period = 0.002f, // 2ms周期
+            .dutyratio = 0.01f, // 初始占空比为0.01
         },
         .motor_type = SNAIL2305,
     };
     friction_l = SNAILMotorInit(&friction_config);
 
-    friction_config.pwm_init_config.channel = TIM_CHANNEL_2; // 右摩擦轮,改通道和方向就行
+    friction_config.pwm_init_config.channel = TIM_CHANNEL_2; // 右摩擦轮,改通道就行
     friction_r = SNAILMotorInit(&friction_config);
     
 
@@ -211,8 +211,8 @@ void ShootTask()
             SNAILMotorSetRef(friction_r, 0);
             break;
         default: // 当前为了调试设定的默认值4000,因为还没有加入裁判系统无法读取弹速.
-            SNAILMotorSetRef(friction_l, 0.9f);
-            SNAILMotorSetRef(friction_r, 0.9f);
+            SNAILMotorSetRef(friction_l, 0.8f);
+            SNAILMotorSetRef(friction_r, 0.8f);
             break;
         }
     }

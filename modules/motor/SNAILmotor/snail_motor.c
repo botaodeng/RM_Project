@@ -18,7 +18,6 @@ SNAILMotorInstance *SNAILMotorInit(PWM_Motor_Init_Config_s *config)
     
     //注册电机到PWM
     instance->motor_pwm_instance = PWMRegister(&config->pwm_init_config);
-
     return instance;
 }
 
