@@ -7,5 +7,6 @@
         "usbd_conf.h": "c",
         "usbd_desc.h": "c",
         "usbd_cdc_if.h": "c"
-    }
+    },
+    "cortex-debug.variableUseNaturalFormat": false
 }

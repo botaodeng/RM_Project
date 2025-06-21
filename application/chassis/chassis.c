@@ -91,11 +91,11 @@ void ChassisInit()
     chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_REVERSE;
     motor_lf = DJIMotorInit(&chassis_motor_config);
 
-    chassis_motor_config.can_init_config.tx_id = 2;
+    chassis_motor_config.can_init_config.tx_id = 4;
     chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_REVERSE;
     motor_rf = DJIMotorInit(&chassis_motor_config);
 
-    chassis_motor_config.can_init_config.tx_id = 4;
+    chassis_motor_config.can_init_config.tx_id = 2;
     chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_REVERSE;
     motor_lb = DJIMotorInit(&chassis_motor_config);
 
@@ -105,13 +105,13 @@ void ChassisInit()
 
     referee_data = UITaskInit(&huart6,&ui_data); // 裁判系统初始化,会同时初始化UI
 
-    SuperCap_Init_Config_s cap_conf = {
+/*    SuperCap_Init_Config_s cap_conf = {
         .can_config = {
             .can_handle = &hcan2,
             .tx_id = 0x302, // 超级电容默认接收id
             .rx_id = 0x301, // 超级电容默认发送id,注意tx和rx在其他人看来是反的
         }};
-    cap = SuperCapInit(&cap_conf); // 超级电容初始化
+    cap = SuperCapInit(&cap_conf); // 超级电容初始化 */
 
     // 发布订阅初始化,如果为双板,则需要can comm来传递消息
 #ifdef CHASSIS_BOARD

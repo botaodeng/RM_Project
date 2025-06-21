@@ -72,8 +72,8 @@ void ShootInit()
         .pwm_init_config = {
             .htim = &htim1,
             .channel = TIM_CHANNEL_1,
-            .period = 0.002f, // 2ms周期
-            .dutyratio = 0.01f, // 初始占空比为0.01
+            .period = 0.02f, // 20ms周期
+            .dutyratio = 0.0f, // 初始占空比为0.0
         },
         .motor_type = SNAIL2305,
     };
@@ -81,7 +81,17 @@ void ShootInit()
 
     friction_config.pwm_init_config.channel = TIM_CHANNEL_2; // 右摩擦轮,改通道就行
     friction_r = SNAILMotorInit(&friction_config);
+
+    //行程校准
+    SNAILMotorEnable(friction_l);
+    SNAILMotorSetRef(friction_l,0.01f);
+    SNAILMotorStop(friction_l);
+
+    SNAILMotorEnable(friction_r);
+    SNAILMotorSetRef(friction_r,0.01f);
+    SNAILMotorStop(friction_r);
     
+
 
     // 拨盘电机
     Motor_Init_Config_s loader_config = {

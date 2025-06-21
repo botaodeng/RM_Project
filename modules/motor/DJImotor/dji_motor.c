@@ -47,6 +47,36 @@ static void MotorSenderGrouping(DJIMotorInstance *motor, CAN_Init_Config_s *conf
     switch (motor->motor_type)
     {
     case M2006:
+        if (motor_id < 4) // 根据ID分组
+        {
+            motor_send_num = motor_id;
+            motor_grouping = config->can_handle == &hcan1 ? 1 : 4;
+        }
+        else
+        {
+            motor_send_num = motor_id - 4;
+            motor_grouping = config->can_handle == &hcan1 ? 0 : 3;
+        }
+
+        // 计算接收id并设置分组发送id
+        config->rx_id = 0x200 + motor_id + 1;   // 把ID+1,进行分组设置
+        sender_enable_flag[motor_grouping] = 1; // 设置发送标志位,防止发送空帧
+        motor->message_num = motor_send_num;
+        motor->sender_group = motor_grouping;
+
+        // 检查是否发生id冲突
+        for (size_t i = 0; i < idx; ++i)
+        {
+            if (dji_motor_instance[i]->motor_can_instance->can_handle == config->can_handle && dji_motor_instance[i]->motor_can_instance->rx_id == config->rx_id)
+            {
+                LOGERROR("[dji_motor] ID crash. Check in debug mode, add dji_motor_instance to watch to get more information.");
+                uint16_t can_bus = config->can_handle == &hcan1 ? 1 : 2;
+                while (1) // 6020的id 1-4和2006/3508的id 5-8会发生冲突(若有注册,即1!5,2!6,3!7,4!8) (1!5!,LTC! (((不是)
+                    LOGERROR("[dji_motor] id [%d], can_bus [%d]", config->rx_id, can_bus);
+            }
+        }
+        break;
+        
     case M3508:
         if (motor_id < 4) // 根据ID分组
         {
