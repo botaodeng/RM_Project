@@ -21,17 +21,35 @@ SNAILMotorInstance *SNAILMotorInit(PWM_Motor_Init_Config_s *config)
     return instance;
 }
 
+
 void SNAILMotorSetRef(SNAILMotorInstance *motor, float ref)
 {
     if (motor->stop_flag == MOTOR_STOP)
     {
-        PWMSetDutyRatio(motor->motor_pwm_instance, 0.0f); // 停止电机
+        PWMSetDutyRatio(motor->motor_pwm_instance, 0.5f); // 停止电机,设置参考值为0.05
+    }
+    else
+    {
+        PWMSetDutyRatio(motor->motor_pwm_instance, ref); // 电机参考值设置
+    }
+}
+
+void SNAIL_motor_ramp(SNAILMotorInstance *motor, float ref)
+{
+    if(motor->motor_pwm_instance->dutyratio < ref)
+    {
+        PWMSetDutyRatio(motor->motor_pwm_instance, (motor->motor_pwm_instance->dutyratio + 0.001f)); // ramp
+    }
+    else if(motor->motor_pwm_instance->dutyratio > ref)
+   {
+        PWMSetDutyRatio(motor->motor_pwm_instance, (motor->motor_pwm_instance->dutyratio - 0.001f)); // ramp
     }
     else
     {
         PWMSetDutyRatio(motor->motor_pwm_instance, ref); // 设置占空比
     }
 }
+
 
 void SNAILMotorStop(SNAILMotorInstance *motor)
 {

@@ -224,7 +224,7 @@ static void MouseKeySet()
         shoot_cmd_send.bullet_speed = 18;
         break;
     default:
-        shoot_cmd_send.bullet_speed = 30;
+        shoot_cmd_send.bullet_speed = 25;
         break;
     }
     switch (rc_data[TEMP].key_count[KEY_PRESS][Key_E] % 4) // E键设置发射模式

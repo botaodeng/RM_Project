@@ -72,8 +72,8 @@ void ShootInit()
         .pwm_init_config = {
             .htim = &htim1,
             .channel = TIM_CHANNEL_1,
-            .period = 0.02f, // 20ms周期
-            .dutyratio = 0.0f, // 初始占空比为0.0
+            .period = 0.002f, // 2ms周期
+            .dutyratio = 0.5f, // 初始占空比为0.5
         },
         .motor_type = SNAIL2305,
     };
@@ -81,17 +81,6 @@ void ShootInit()
 
     friction_config.pwm_init_config.channel = TIM_CHANNEL_2; // 右摩擦轮,改通道就行
     friction_r = SNAILMotorInit(&friction_config);
-
-    //行程校准
-    SNAILMotorEnable(friction_l);
-    SNAILMotorSetRef(friction_l,0.01f);
-    SNAILMotorStop(friction_l);
-
-    SNAILMotorEnable(friction_r);
-    SNAILMotorSetRef(friction_r,0.01f);
-    SNAILMotorStop(friction_r);
-    
-
 
     // 拨盘电机
     Motor_Init_Config_s loader_config = {
@@ -102,22 +91,22 @@ void ShootInit()
         .controller_param_init_config = {
             .angle_PID = {
                 // 如果启用位置环来控制发弹,需要较大的I值保证输出力矩的线性度否则出现接近拨出的力矩大幅下降
-                .Kp = 0, // 10
+                .Kp = 10, // 10
                 .Ki = 0,
                 .Kd = 0,
                 .MaxOut = 200,
             },
             .speed_PID = {
-                .Kp = 0, // 10
-                .Ki = 0, // 1
+                .Kp = 10, // 10
+                .Ki = 10, // 1
                 .Kd = 0,
                 .Improve = PID_Integral_Limit,
                 .IntegralLimit = 5000,
                 .MaxOut = 5000,
             },
             .current_PID = {
-                .Kp = 0, // 0.7
-                .Ki = 0, // 0.1
+                .Kp = 0.7, // 0.7
+                .Ki = 0.2, // 0.1
                 .Kd = 0,
                 .Improve = PID_Integral_Limit,
                 .IntegralLimit = 5000,
@@ -209,27 +198,27 @@ void ShootTask()
         switch (shoot_cmd_recv.bullet_speed)
         {
         case SMALL_AMU_15:
-            SNAILMotorSetRef(friction_l, 0);
-            SNAILMotorSetRef(friction_r, 0);
+            SNAILMotorSetRef(friction_l, 0.6f);
+            SNAILMotorSetRef(friction_r, 0.6f);
             break;
         case SMALL_AMU_18:
-            SNAILMotorSetRef(friction_l, 0);
-            SNAILMotorSetRef(friction_r, 0);
+            SNAILMotorSetRef(friction_l, 0.7f);
+            SNAILMotorSetRef(friction_r, 0.7f);
             break;
-        case SMALL_AMU_30:
-            SNAILMotorSetRef(friction_l, 0);
-            SNAILMotorSetRef(friction_r, 0);
+        case SMALL_AMU_25:
+            SNAILMotorSetRef(friction_l, 0.7f);
+            SNAILMotorSetRef(friction_r, 0.7f);
             break;
         default: // 当前为了调试设定的默认值4000,因为还没有加入裁判系统无法读取弹速.
-            SNAILMotorSetRef(friction_l, 0.8f);
-            SNAILMotorSetRef(friction_r, 0.8f);
+            SNAILMotorSetRef(friction_l, 0.7f);
+            SNAILMotorSetRef(friction_r, 0.7f);
             break;
         }
     }
     else // 关闭摩擦轮
     {
-        SNAILMotorSetRef(friction_l, 0);
-        SNAILMotorSetRef(friction_r, 0);
+        SNAILMotorStop(friction_l);
+        SNAILMotorStop(friction_r);
     }
 
     // 开关弹舱盖

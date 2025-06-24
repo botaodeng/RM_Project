@@ -55,11 +55,19 @@ SNAILMotorInstance *SNAILMotorInit(PWM_Motor_Init_Config_s *config);
 
 /**
  * @brief 被application层的应用调用,给电机设定参考值.
- * @note 该函数会直接设置PWM占空比,如果电机处于停止状态,则会将占空比设置为0
+ * @note 该函数会间接设置PWM占空比,如果电机处于停止状态,则会将占空比设置为0
  * @param motor 要设置的电机
  * @param ref 设定参考值
  */
 void SNAILMotorSetRef(SNAILMotorInstance *motor, float ref);
+
+/**
+ * @brief 被application层的应用调用,给电机设定参考值.
+ * @note 该函数会ramp设置PWM占空比,如果电机处于停止状态,则会将占空比设置为0
+ * @param motor 要设置的电机
+ * @param ref 设定参考值
+ */
+void SNAIL_motor_ramp(SNAILMotorInstance *motor, float ref);
 
 /**
  * @brief 该函数被motor_task调用运行在rtos上,motor_stask内通过osDelay()确定控制频率
