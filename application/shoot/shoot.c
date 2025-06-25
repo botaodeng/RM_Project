@@ -174,10 +174,10 @@ void ShootTask()
         hibernate_time = DWT_GetTimeline_ms();                                                  // 记录触发指令的时间
         dead_time = 300;                                                                        // 完成3发弹丸发射的时间
         break;
-    // 连发模式,对速度闭环,射频后续修改为可变,目前固定为1Hz
+    // 连发模式,对速度闭环,射频后续修改为可变,目前固定为1.5Hz
     case LOAD_BURSTFIRE:
         DJIMotorOuterLoop(loader, SPEED_LOOP);
-        DJIMotorSetRef(loader, shoot_cmd_recv.shoot_rate * 360 * REDUCTION_RATIO_LOADER / 8);
+        DJIMotorSetRef(loader, (shoot_cmd_recv.shoot_rate * 360 * REDUCTION_RATIO_LOADER / 8)*1.5); // 乘的系数n是n Hz
         // x颗/秒换算成速度: 已知一圈的载弹量,由此计算出1s需要转的角度,注意换算角速度(DJIMotor的速度单位是angle per second)
         break;
     // 拨盘反转,对速度闭环,后续增加卡弹检测(通过裁判系统剩余热量反馈和电机电流)
@@ -198,20 +198,20 @@ void ShootTask()
         switch (shoot_cmd_recv.bullet_speed)
         {
         case SMALL_AMU_15:
+            SNAILMotorSetRef(friction_l, 0.55f);
+            SNAILMotorSetRef(friction_r, 0.55f);
+            break;
+        case SMALL_AMU_18:
             SNAILMotorSetRef(friction_l, 0.6f);
             SNAILMotorSetRef(friction_r, 0.6f);
             break;
-        case SMALL_AMU_18:
-            SNAILMotorSetRef(friction_l, 0.7f);
-            SNAILMotorSetRef(friction_r, 0.7f);
-            break;
         case SMALL_AMU_25:
-            SNAILMotorSetRef(friction_l, 0.7f);
-            SNAILMotorSetRef(friction_r, 0.7f);
+            SNAILMotorSetRef(friction_l, 0.675f); // 0.675f@1Hz
+            SNAILMotorSetRef(friction_r, 0.675f);
             break;
-        default: // 当前为了调试设定的默认值4000,因为还没有加入裁判系统无法读取弹速.
-            SNAILMotorSetRef(friction_l, 0.7f);
-            SNAILMotorSetRef(friction_r, 0.7f);
+        default: // 其他弹速,默认设置
+            SNAILMotorSetRef(friction_l, 0.675f);
+            SNAILMotorSetRef(friction_r, 0.675f);
             break;
         }
     }

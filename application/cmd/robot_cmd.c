@@ -91,7 +91,7 @@ void RobotCMDInit()
     //     },
     // };
     //bmi088_test = BMI088Register(&bmi088_config);
-   rc_data = RemoteControlInit(&huart3);   // 修改为对应串口,注意如果是自研板dbus协议串口需选用添加了反相器的那个
+    rc_data = RemoteControlInit(&huart3);   // 修改为对应串口,注意如果是自研板dbus协议串口需选用添加了反相器的那个
     vision_recv_data = VisionInit(&huart1); // 视觉通信串口
 
     gimbal_cmd_pub = PubRegister("gimbal_cmd", sizeof(Gimbal_Ctrl_Cmd_s));
@@ -209,8 +209,8 @@ static void RemoteControlSet()
  */
 static void MouseKeySet()
 {
-    chassis_cmd_send.vx = rc_data[TEMP].key[KEY_PRESS].w * 300 - rc_data[TEMP].key[KEY_PRESS].s * 300; // 系数待测
-    chassis_cmd_send.vy = rc_data[TEMP].key[KEY_PRESS].s * 300 - rc_data[TEMP].key[KEY_PRESS].d * 300;
+    chassis_cmd_send.vx = rc_data[TEMP].key[KEY_PRESS].w * 3000 - rc_data[TEMP].key[KEY_PRESS].s * 3000; // 系数待测
+    chassis_cmd_send.vy = rc_data[TEMP].key[KEY_PRESS].s * 3000 - rc_data[TEMP].key[KEY_PRESS].d * 3000;
 
     gimbal_cmd_send.yaw += (float)rc_data[TEMP].mouse.x / 660 * 10; // 系数待测
     gimbal_cmd_send.pitch += (float)rc_data[TEMP].mouse.y / 660 * 10;
@@ -227,20 +227,23 @@ static void MouseKeySet()
         shoot_cmd_send.bullet_speed = 25;
         break;
     }
-    switch (rc_data[TEMP].key_count[KEY_PRESS][Key_E] % 4) // E键设置发射模式
+    if(rc_data[TEMP].mouse.press_l) // 鼠标左键按下,射击
     {
-    case 0:
-        shoot_cmd_send.load_mode = LOAD_STOP;
-        break;
-    case 1:
-        shoot_cmd_send.load_mode = LOAD_1_BULLET;
-        break;
-    case 2:
-        shoot_cmd_send.load_mode = LOAD_3_BULLET;
-        break;
-    default:
-        shoot_cmd_send.load_mode = LOAD_BURSTFIRE;
-        break;
+        switch (rc_data[TEMP].key_count[KEY_PRESS][Key_E] % 3 ) // E键设置发射模式
+        {
+        case 0:
+            shoot_cmd_send.load_mode = LOAD_1_BULLET;
+            break;
+        case 1:
+            shoot_cmd_send.load_mode = LOAD_3_BULLET;
+            break;
+        default:
+            shoot_cmd_send.load_mode = LOAD_BURSTFIRE;
+            break;
+        }
+    }
+    else{
+        shoot_cmd_send.load_mode = LOAD_STOP; // 鼠标左键未按下,停止发射
     }
     switch (rc_data[TEMP].key_count[KEY_PRESS][Key_R] % 2) // R键开关弹舱
     {

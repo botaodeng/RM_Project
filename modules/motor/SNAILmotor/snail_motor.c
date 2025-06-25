@@ -26,7 +26,7 @@ void SNAILMotorSetRef(SNAILMotorInstance *motor, float ref)
 {
     if (motor->stop_flag == MOTOR_STOP)
     {
-        PWMSetDutyRatio(motor->motor_pwm_instance, 0.5f); // 停止电机,设置参考值为0.05
+        PWMSetDutyRatio(motor->motor_pwm_instance, 0.5f); // 停止电机,设置参考值为0.5
     }
     else
     {
