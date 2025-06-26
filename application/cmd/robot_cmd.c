@@ -218,12 +218,65 @@ static void RemoteControlSet()
  */
 static void MouseKeySet()
 {
+    /*
     chassis_cmd_send.vx = rc_data[TEMP].key[KEY_PRESS].w * 3000 - rc_data[TEMP].key[KEY_PRESS].s * 3000; // 系数待测
-    chassis_cmd_send.vy = rc_data[TEMP].key[KEY_PRESS].s * 3000 - rc_data[TEMP].key[KEY_PRESS].d * 3000;
+    chassis_cmd_send.vy = rc_data[TEMP].key[KEY_PRESS].a * 3000 - rc_data[TEMP].key[KEY_PRESS].d * 3000;
+    */
+    
+    switch (rc_data[TEMP].key_count[KEY_PRESS][Key_Q] % 2) // Q键设置底盘模式
+    {
+    case 1: //底盘跟随云台
+        chassis_cmd_send.chassis_mode = CHASSIS_ROTATE;
+        gimbal_cmd_send.gimbal_mode = GIMBAL_GYRO_MODE;
+        break;
+    default: //底盘和云台分离,底盘保持不转动
+        chassis_cmd_send.chassis_mode = CHASSIS_NO_FOLLOW;
+        gimbal_cmd_send.gimbal_mode = GIMBAL_FREE_MODE;
+    }
 
-    gimbal_cmd_send.yaw += (float)rc_data[TEMP].mouse.x / 660 * 10; // 系数待测
-    gimbal_cmd_send.pitch += (float)rc_data[TEMP].mouse.y / 660 * 10;
+    // 底盘运动
+    chassis_cmd_send.vx = 0; // 先设置为0,防止误触发
+    chassis_cmd_send.vy = 0;
 
+    if (rc_data[TEMP].key[KEY_PRESS].w) // W键按下,前进
+    {
+        chassis_cmd_send.vy -= 10000.0f;  // 系数待测
+    } else{}
+    if (rc_data[TEMP].key[KEY_PRESS].a) // A键按下,左移
+    {
+        chassis_cmd_send.vx -= 10000.0f;
+    } else{}
+    if (rc_data[TEMP].key[KEY_PRESS].s) // S键按下,后退
+    {
+        chassis_cmd_send.vy += 10000.0f;
+    }else{}
+    if (rc_data[TEMP].key[KEY_PRESS].d) // D键按下,右移
+    {
+        chassis_cmd_send.vx += 10000.0f;  
+    }else{}
+
+    if( chassis_cmd_send.vx !=0 && chassis_cmd_send.vy !=0) // 如果同时按下了前进和左移等键,则将速度归一化
+    {
+        chassis_cmd_send.vx *= 0.70710f;
+        chassis_cmd_send.vy *= 0.70710f;
+    }
+
+    if(chassis_cmd_send.chassis_mode == CHASSIS_ROTATE){
+        chassis_cmd_send.vx *= 0.2f; // 跟随模式下速度减半
+        chassis_cmd_send.vy *= 0.2f;
+    }
+    else{
+        chassis_cmd_send.vx *= 1.3f; // 分离模式下速度增大
+        chassis_cmd_send.vy *= 1.3f;
+    }
+
+    gimbal_cmd_send.yaw -= (float)rc_data[TEMP].mouse.x / 660 * 10; // 系数待测
+    gimbal_cmd_send.pitch -= (float)rc_data[TEMP].mouse.y / 660 * 10;
+    
+
+    shoot_cmd_send.bullet_speed = 25;
+
+    /*
     switch (rc_data[TEMP].key_count[KEY_PRESS][Key_Z] % 3) // Z键设置弹速
     {
     case 0:
@@ -236,8 +289,13 @@ static void MouseKeySet()
         shoot_cmd_send.bullet_speed = 25;
         break;
     }
+    */
     if(rc_data[TEMP].mouse.press_l) // 鼠标左键按下,射击
     {
+
+        shoot_cmd_send.load_mode = LOAD_BURSTFIRE;
+
+        /* // 暂时无法实现，防止误触发
         switch (rc_data[TEMP].key_count[KEY_PRESS][Key_E] % 3 ) // E键设置发射模式
         {
         case 0:
@@ -250,10 +308,13 @@ static void MouseKeySet()
             shoot_cmd_send.load_mode = LOAD_BURSTFIRE;
             break;
         }
+        */
     }
     else{
         shoot_cmd_send.load_mode = LOAD_STOP; // 鼠标左键未按下,停止发射
     }
+    /*
+    // 暂时无法实现，防止误触发
     switch (rc_data[TEMP].key_count[KEY_PRESS][Key_R] % 2) // R键开关弹舱
     {
     case 0:
@@ -272,6 +333,7 @@ static void MouseKeySet()
         shoot_cmd_send.friction_mode = FRICTION_ON;
         break;
     }
+    
     switch (rc_data[TEMP].key_count[KEY_PRESS][Key_C] % 4) // C键设置底盘速度
     {
     case 0:
@@ -287,6 +349,8 @@ static void MouseKeySet()
         chassis_cmd_send.chassis_speed_buff = 100;
         break;
     }
+    */
+
     switch (rc_data[TEMP].key[KEY_PRESS].shift) // 待添加 按shift允许超功率 消耗缓冲能量
     {
     case 1:
