@@ -308,7 +308,7 @@ static void MouseKeySet()
  */
 static void EmergencyHandler()
 {
-    
+    /*
     // 拨轮的向下拨超过一半进入急停模式.注意向打时下拨轮是正
     if (rc_data[TEMP].rc.dial > 300 || robot_state == ROBOT_STOP) // 还需添加重要应用和模块离线的判断
     {
@@ -319,7 +319,7 @@ static void EmergencyHandler()
         shoot_cmd_send.friction_mode = FRICTION_OFF;
         shoot_cmd_send.load_mode = LOAD_STOP;
         LOGERROR("[CMD] emergency stop!");
-    }
+    }*/
     // 遥控器右侧开关为[上],恢复正常运行
     if (switch_is_up(rc_data[TEMP].rc.switch_right))
     {
