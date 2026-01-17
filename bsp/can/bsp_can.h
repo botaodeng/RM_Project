@@ -34,6 +34,19 @@
 // 如果只有1个CAN,还需要把bsp_can.c中所有的hcan2变量改为hcan1(别担心,主要是总线和FIFO的负载均衡,不影响功能)
 #endif
 
+// 定义查找表
+static const uint32_t DLC_LookUp_Table[9] = {
+    FDCAN_DLC_BYTES_0,
+    FDCAN_DLC_BYTES_1,  
+    FDCAN_DLC_BYTES_2,  
+    FDCAN_DLC_BYTES_3,
+    FDCAN_DLC_BYTES_4,
+    FDCAN_DLC_BYTES_5,
+    FDCAN_DLC_BYTES_6,
+    FDCAN_DLC_BYTES_7,
+    FDCAN_DLC_BYTES_8
+};
+
 
 
 /* can instance typedef, every module registered to CAN should have this variable */

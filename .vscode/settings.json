@@ -1,4 +1,4 @@
 {
-    "cortex-debug.openocdPath": "C:\\OPENOCD\\OPENOCD-20231002-0.12.0\\BIN\\OPENOCD.EXE",
-    "cortex-debug.armToolchainPath": "C:\\PROGRAM FILES (X86)\\ARM GNU TOOLCHAIN ARM-NONE-EABI\\13.3 REL1\\BIN"
+    "cortex-debug.openocdPath": "D:\\MSYS64\\MINGW64\\BIN\\OPENOCD.EXE",
+    "cortex-debug.armToolchainPath": "D:\\MSYS64\\MINGW64\\BIN"
 }
