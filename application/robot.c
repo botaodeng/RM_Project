@@ -11,6 +11,7 @@
 
 #if defined(ONE_BOARD) || defined(CHASSIS_BOARD)
 #include "chassis.h"
+#include "robot_cmd.h"
 #endif
 
 #if defined(ONE_BOARD) || defined(GIMBAL_BOARD)

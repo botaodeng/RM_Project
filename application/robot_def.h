@@ -17,12 +17,15 @@
 #include "stdint.h"
 
 /* 开发板类型定义,烧录时注意不要弄错对应功能;修改定义后需要重新编译,只能存在一个定义! */
-#define ONE_BOARD // 单板控制整车
+ #define ONE_BOARD // 单板控制整车
 // #define CHASSIS_BOARD //底盘板
 // #define GIMBAL_BOARD  //云台板
 
 //#define VISION_USE_VCP  // 使用虚拟串口发送视觉数据
 #define VISION_USE_UART // 使用串口发送视觉数据
+
+// #define DR16DT7_REMOTE_CONTROL // 使用DR16/DT7遥控器
+#define FSiA10B_REMOTE_CONTROL // 使用FSiA10B遥控器
 
 /* 机器人重要参数定义,注意根据不同机器人进行修改,浮点数需要以.0或f结尾,无符号以u结尾 */
 // 云台参数
@@ -34,14 +37,14 @@
 // 发射参数
 #define ONE_BULLET_DELTA_ANGLE 36    // 发射一发弹丸拨盘转动的距离,由机械设计图纸给出
 #define REDUCTION_RATIO_LOADER 49.0f // 拨盘电机的减速比,英雄需要修改为3508的19.0f
-#define NUM_PER_CIRCLE 10            // 拨盘一圈的装载量
+#define NUM_PER_CIRCLE 8             // 拨盘一圈的装载量
 // 机器人底盘修改的参数,单位为mm(毫米)
-#define WHEEL_BASE 350              // 纵向轴距(前进后退方向)
-#define TRACK_WIDTH 300             // 横向轮距(左右平移方向)
+#define WHEEL_BASE 420              // 纵向轴距(前进后退方向)
+#define TRACK_WIDTH 430             // 横向轮距(左右平移方向)
 #define CENTER_GIMBAL_OFFSET_X 0    // 云台旋转中心距底盘几何中心的距离,前后方向,云台位于正中心时默认设为0
 #define CENTER_GIMBAL_OFFSET_Y 0    // 云台旋转中心距底盘几何中心的距离,左右方向,云台位于正中心时默认设为0
-#define RADIUS_WHEEL 60             // 轮子半径
-#define REDUCTION_RATIO_WHEEL 19.0f // 电机减速比,因为编码器量测的是转子的速度而不是输出轴的速度故需进行转换
+#define RADIUS_WHEEL 75             // 轮子半径
+#define REDUCTION_RATIO_WHEEL 15.7647f // 电机减速比,因为编码器量测的是转子的速度而不是输出轴的速度故需进行转换
 
 #define GYRO2GIMBAL_DIR_YAW 1   // 陀螺仪数据相较于云台的yaw的方向,1为相同,-1为相反
 #define GYRO2GIMBAL_DIR_PITCH 1 // 陀螺仪数据相较于云台的pitch的方向,1为相同,-1为相反
