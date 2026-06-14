@@ -39,8 +39,11 @@
 #define REDUCTION_RATIO_LOADER 49.0f // 拨盘电机的减速比,英雄需要修改为3508的19.0f
 #define NUM_PER_CIRCLE 8             // 拨盘一圈的装载量
 // 机器人底盘修改的参数,单位为mm(毫米)
-#define WHEEL_BASE 420              // 纵向轴距(前进后退方向)
-#define TRACK_WIDTH 430             // 横向轮距(左右平移方向)
+// #define Mecanum_ROBOT // 麦克纳姆轮底盘
+#define OMNI_ROBOT   // 全向轮底盘
+
+#define WHEEL_BASE 426              // 纵向轴距(前进后退方向)
+#define TRACK_WIDTH 426             // 横向轮距(左右平移方向)
 #define CENTER_GIMBAL_OFFSET_X 0    // 云台旋转中心距底盘几何中心的距离,前后方向,云台位于正中心时默认设为0
 #define CENTER_GIMBAL_OFFSET_Y 0    // 云台旋转中心距底盘几何中心的距离,左右方向,云台位于正中心时默认设为0
 #define RADIUS_WHEEL 75             // 轮子半径
@@ -55,6 +58,10 @@
     (defined(ONE_BOARD) && defined(GIMBAL_BOARD)) ||  \
     (defined(CHASSIS_BOARD) && defined(GIMBAL_BOARD))
 #error Conflict board definition! You can only define one board type.
+#endif
+
+#if (defined(Mecanum_ROBOT) && defined(OMNI_ROBOT)) || (!defined(Mecanum_ROBOT) && !defined(OMNI_ROBOT))
+#error Conflict robot type definition! You can only define one robot type, or you forget to define the robot type.
 #endif
 
 #pragma pack(1) // 压缩结构体,取消字节对齐,下面的数据都可能被传输

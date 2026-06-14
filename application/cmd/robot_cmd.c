@@ -259,7 +259,7 @@ static void MouseKeySet()
 static void EmergencyHandler()
 {
     // VRA拨超过一半进入急停模式.注意向打时下拨轮是正(?)
-    if (rc_data[TEMP].vra > 300 || robot_state == ROBOT_STOP || RemoteControlIsOnline() != 0) // 还需添加重要应用和模块离线的判断
+    if (rc_data[TEMP].vra > 300 || robot_state == ROBOT_STOP || RemoteControlIsOnline() == 0) // 还需添加重要应用和模块离线的判断
     {
         robot_state = ROBOT_STOP;
         gimbal_cmd_send.gimbal_mode = GIMBAL_ZERO_FORCE;
@@ -270,10 +270,10 @@ static void EmergencyHandler()
         LOGERROR("[CMD] emergency stop!");
     }
     // 遥控器最右侧开关，左边两个开关为[上],恢复正常运行
-    if (switch_is_up(rc_data[TEMP].switch_swd) && switch_is_up(rc_data[TEMP].switch_swa) && switch_is_up(rc_data[TEMP].switch_swb))
+    if (switch_is_up(rc_data[TEMP].switch_swd) && switch_is_up(rc_data[TEMP].switch_swa) && switch_is_up(rc_data[TEMP].switch_swb) && RemoteControlIsOnline()) // 还需添加重要应用和模块在线的判断
     {
         robot_state = ROBOT_READY;
-        shoot_cmd_send.shoot_mode = SHOOT_ON;
+        // shoot_cmd_send.shoot_mode = SHOOT_ON;
         LOGINFO("[CMD] reinstate, robot ready");
     }
 }
@@ -294,6 +294,8 @@ void RobotCMDTask()
 
     // 根据gimbal的反馈值计算云台和底盘正方向的夹角,不需要传参,通过static私有变量完成
     CalcOffsetAngle();
+
+    RemoteControlSet(); // 根据遥控器输入设置控制模式和控制量,内部包含了紧急停止的处理
     /*
     // 根据遥控器左侧开关,确定当前使用的控制模式为遥控器调试还是键鼠
     if (switch_is_down(rc_data[TEMP].switch_left)) // 遥控器左侧开关状态为[下],遥控器控制

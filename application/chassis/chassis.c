@@ -45,7 +45,7 @@ static Chassis_Upload_Data_s chassis_feedback_data; // 底盘回传的反馈数�
 static referee_info_t* referee_data; // 用于获取裁判系统的数据
 static Referee_Interactive_info_t ui_data; // UI数据，将底盘中的数据传入此结构体的对应变量中，UI会自动检测是否变化，对应显示UI
 
-static SuperCapInstance *cap;                                       // 超级电容
+// static SuperCapInstance *cap;                                       // 超级电容
 static DJIMotorInstance *motor_lf, *motor_rf, *motor_lb, *motor_rb; // left right forward back
 
 /* 用于自旋变速策略的时间变量 */
@@ -95,16 +95,17 @@ void ChassisInit()
     chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_REVERSE;
     motor_rf = DJIMotorInit(&chassis_motor_config);
 
-    chassis_motor_config.can_init_config.tx_id = 4;
+    chassis_motor_config.can_init_config.tx_id = 3;
     chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_REVERSE;
     motor_lb = DJIMotorInit(&chassis_motor_config);
 
-    chassis_motor_config.can_init_config.tx_id = 3;
+    chassis_motor_config.can_init_config.tx_id = 4;
     chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_REVERSE;
     motor_rb = DJIMotorInit(&chassis_motor_config);
 
     referee_data = UITaskInit(&huart1,&ui_data); // 裁判系统初始化,会同时初始化UI
 
+    /*
     SuperCap_Init_Config_s cap_conf = {
         .can_config = {
             .can_handle = &hcan2,
@@ -112,6 +113,7 @@ void ChassisInit()
             .rx_id = 0x301, // 超级电容默认发送id,注意tx和rx在其他人看来是反的
         }};
     cap = SuperCapInit(&cap_conf); // 超级电容初始化
+    */
 
     // 发布订阅初始化,如果为双板,则需要can comm来传递消息
 #ifdef CHASSIS_BOARD
@@ -135,12 +137,15 @@ void ChassisInit()
 #endif // ONE_BOARD
 }
 
+#if defined(Mecanum_ROBOT)
+
 #define LF_CENTER ((HALF_TRACK_WIDTH + CENTER_GIMBAL_OFFSET_X + HALF_WHEEL_BASE - CENTER_GIMBAL_OFFSET_Y) * DEGREE_2_RAD)
 #define RF_CENTER ((HALF_TRACK_WIDTH - CENTER_GIMBAL_OFFSET_X + HALF_WHEEL_BASE - CENTER_GIMBAL_OFFSET_Y) * DEGREE_2_RAD)
 #define LB_CENTER ((HALF_TRACK_WIDTH + CENTER_GIMBAL_OFFSET_X + HALF_WHEEL_BASE + CENTER_GIMBAL_OFFSET_Y) * DEGREE_2_RAD)
 #define RB_CENTER ((HALF_TRACK_WIDTH - CENTER_GIMBAL_OFFSET_X + HALF_WHEEL_BASE + CENTER_GIMBAL_OFFSET_Y) * DEGREE_2_RAD)
+
 /**
- * @brief 计算每个轮毂电机的输出,正运动学解算
+ * @brief 计算每个麦克纳姆轮毂电机的输出,正运动学解算
  *        用宏进行预替换减小开销,运动解算具体过程参考教程
  */
 static void MecanumCalculate()
@@ -150,6 +155,23 @@ static void MecanumCalculate()
     vt_lb = chassis_vx - chassis_vy - chassis_cmd_recv.wz * LB_CENTER;
     vt_rb = chassis_vx + chassis_vy - chassis_cmd_recv.wz * RB_CENTER;
 }
+#endif
+
+#if defined(OMNI_ROBOT)
+#define OMNI_CONST (0.7071067812f) // sqrt(2)/2, 用于全向轮的运动学解算
+
+/**
+ * @brief 计算每个全向轮轮毂电机的输出,正运动学解算
+ *        用宏进行预替换减小开销,运动解算具体过程参考教程
+ */
+static void OmniCalculate()
+{
+    vt_lf = (-chassis_vx - chassis_vy) * OMNI_CONST + chassis_cmd_recv.wz * HALF_WHEEL_BASE;
+    vt_rf = (-chassis_vx + chassis_vy) * OMNI_CONST + chassis_cmd_recv.wz * HALF_WHEEL_BASE;
+    vt_lb = (chassis_vx - chassis_vy) * OMNI_CONST + chassis_cmd_recv.wz * HALF_WHEEL_BASE;
+    vt_rb = (chassis_vx + chassis_vy) * OMNI_CONST + chassis_cmd_recv.wz * HALF_WHEEL_BASE;
+}
+#endif
 
 /**
  * @brief 根据裁判系统和电容剩余容量对输出进行限制并设置电机参考值
@@ -232,7 +254,7 @@ void ChassisTask()
     chassis_vy = chassis_cmd_recv.vx * sin_theta + chassis_cmd_recv.vy * cos_theta;
 
     // 根据控制模式进行正运动学解算,计算底盘输出
-    MecanumCalculate();
+    OmniCalculate();
 
     // 根据裁判系统的反馈数据和电容数据对输出限幅并设定闭环参考值
     LimitChassisOutput();

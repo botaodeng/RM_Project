@@ -6,7 +6,7 @@
 #include "daemon.h"
 #include "bsp_log.h"
 
-#define REMOTE_CONTROL_FRAME_SIZE 18u // 遥控器接收的buffer大小
+#define REMOTE_CONTROL_FRAME_SIZE 25u // 遥控器接收的buffer大小
 
 // 遥控器数据
 static RC_ctrl_t rc_ctrl[2];     //[0]:当前数据TEMP,[1]:上一次的数据LAST.用于按键持续按下和切换的判断
