@@ -59,7 +59,7 @@ void ChassisInit()
 {
     // 四个轮子的参数一样,改tx_id和反转标志位即可
     Motor_Init_Config_s chassis_motor_config = {
-        .can_init_config.can_handle = &hcan1,
+        .can_init_config.can_handle = &hcan3,
         .controller_param_init_config = {
             .speed_PID = {
                 .Kp = 10, // 4.5
@@ -91,15 +91,15 @@ void ChassisInit()
     chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_REVERSE;
     motor_lf = DJIMotorInit(&chassis_motor_config);
 
-    chassis_motor_config.can_init_config.tx_id = 2;
+    chassis_motor_config.can_init_config.tx_id = 4;
     chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_REVERSE;
     motor_rf = DJIMotorInit(&chassis_motor_config);
 
-    chassis_motor_config.can_init_config.tx_id = 3;
+    chassis_motor_config.can_init_config.tx_id = 2;
     chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_REVERSE;
     motor_lb = DJIMotorInit(&chassis_motor_config);
 
-    chassis_motor_config.can_init_config.tx_id = 4;
+    chassis_motor_config.can_init_config.tx_id = 3;
     chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_REVERSE;
     motor_rb = DJIMotorInit(&chassis_motor_config);
 
@@ -166,10 +166,10 @@ static void MecanumCalculate()
  */
 static void OmniCalculate()
 {
-    vt_lf = (-chassis_vx - chassis_vy) * OMNI_CONST + chassis_cmd_recv.wz * HALF_WHEEL_BASE;
-    vt_rf = (-chassis_vx + chassis_vy) * OMNI_CONST + chassis_cmd_recv.wz * HALF_WHEEL_BASE;
-    vt_lb = (chassis_vx - chassis_vy) * OMNI_CONST + chassis_cmd_recv.wz * HALF_WHEEL_BASE;
-    vt_rb = (chassis_vx + chassis_vy) * OMNI_CONST + chassis_cmd_recv.wz * HALF_WHEEL_BASE;
+    vt_lf = (-chassis_vx - chassis_vy) * OMNI_CONST + chassis_cmd_recv.wz * HALF_WHEEL_BASE * DEGREE_2_RAD;
+    vt_rf = (-chassis_vx + chassis_vy) * OMNI_CONST + chassis_cmd_recv.wz * HALF_WHEEL_BASE * DEGREE_2_RAD;
+    vt_lb = (chassis_vx - chassis_vy) * OMNI_CONST + chassis_cmd_recv.wz * HALF_WHEEL_BASE * DEGREE_2_RAD;
+    vt_rb = (chassis_vx + chassis_vy) * OMNI_CONST + chassis_cmd_recv.wz * HALF_WHEEL_BASE * DEGREE_2_RAD;
 }
 #endif
 
@@ -254,7 +254,11 @@ void ChassisTask()
     chassis_vy = chassis_cmd_recv.vx * sin_theta + chassis_cmd_recv.vy * cos_theta;
 
     // 根据控制模式进行正运动学解算,计算底盘输出
+    #if defined(Mecanum_ROBOT)
+    MecanumCalculate();
+    #elif defined(OMNI_ROBOT)
     OmniCalculate();
+    #endif
 
     // 根据裁判系统的反馈数据和电容数据对输出限幅并设定闭环参考值
     LimitChassisOutput();
