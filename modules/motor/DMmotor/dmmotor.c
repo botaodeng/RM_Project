@@ -8,7 +8,7 @@
 #include "stdlib.h"
 #include "bsp_log.h"
 
-static uint8_t idx;
+static uint8_t idx=0; // register idx,是该文件的全局电机索引,在注册时使用
 static DMMotorInstance *dm_motor_instance[DM_MOTOR_CNT];
 static osThreadId dm_task_handle[DM_MOTOR_CNT];
 /* 两个用于将uint值和float值进行映射的函数,在设定发送值和解析反馈值时使用 */
@@ -58,11 +58,12 @@ static void DMMotorDecode(CANInstance *motor_can)
 static void DMMotorLostCallback(void *motor_ptr)
 {
 }
+
 void DMMotorCaliEncoder(DMMotorInstance *motor)
 {
     DMMotorSetMode(DM_CMD_ZERO_POSITION, motor);
-    DWT_Delay(0.1);
 }
+
 DMMotorInstance *DMMotorInit(Motor_Init_Config_s *config)
 {
     DMMotorInstance *motor = (DMMotorInstance *)malloc(sizeof(DMMotorInstance));
@@ -87,10 +88,7 @@ DMMotorInstance *DMMotorInit(Motor_Init_Config_s *config)
     motor->motor_daemon = DaemonRegister(&conf);
 
     DMMotorEnable(motor);
-    DMMotorSetMode(DM_CMD_MOTOR_MODE, motor);
-    DWT_Delay(0.1);
-    DMMotorCaliEncoder(motor);
-    DWT_Delay(0.1);
+
     dm_motor_instance[idx++] = motor;
     return motor;
 }
@@ -103,11 +101,13 @@ void DMMotorSetRef(DMMotorInstance *motor, float ref)
 void DMMotorEnable(DMMotorInstance *motor)
 {
     motor->stop_flag = MOTOR_ENALBED;
+    motor->enabled_flag = DM_ENABLED;
 }
 
-void DMMotorStop(DMMotorInstance *motor)//不使用使能模式是因为需要收到反馈
+void DMMotorDisable(DMMotorInstance *motor)
 {
     motor->stop_flag = MOTOR_STOP;
+    motor->enabled_flag = DM_DISABLED;
 }
 
 void DMMotorOuterLoop(DMMotorInstance *motor, Closeloop_Type_e type)
@@ -163,6 +163,7 @@ void DMMotorControlInit()
     char dm_task_name[5] = "dm";
     // 遍历所有电机实例,创建任务
     if (!idx)
+
         return;
     for (size_t i = 0; i < idx; i++)
     {
@@ -172,4 +173,9 @@ void DMMotorControlInit()
         osThreadDef(dm_task_name, DMMotorTask, osPriorityNormal, 0, 128);
         dm_task_handle[i] = osThreadCreate(osThread(dm_task_name), dm_motor_instance[i]);
     }
+}
+
+void DMMotorStop(DMMotorInstance *motor)
+{
+    motor->stop_flag = MOTOR_STOP;
 }
