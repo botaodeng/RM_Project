@@ -48,8 +48,11 @@ typedef enum
 /* 电机实例结构体,保存电机的测量值,控制设置,PID实例,CAN实例等 */
 typedef struct 
 {
-    DM_Motor_Measure_s measure;
-    Motor_Control_Setting_s motor_settings;
+    DM_Motor_Measure_s measure;                // 电机测量值
+    Motor_Control_Setting_s motor_settings;    // 电机设置
+    Motor_Controller_s motor_controller;       // 电机控制器
+
+    /*
     PIDInstance current_PID;
     PIDInstance speed_PID;
     PIDInstance angle_PID;
@@ -58,11 +61,17 @@ typedef struct
     float *speed_feedforward_ptr;
     float *current_feedforward_ptr;
     float pid_ref;
-    Motor_Working_Type_e stop_flag;
-    DMMotor_Enabled_e enabled_flag;
-    CANInstance *motor_can_instace;
+    */
+
+    CANInstance *motor_can_instace;            // 电机can实例
+
+    Motor_Type_e motor_type;                   // 电机类型
+    Motor_Working_Type_e stop_flag;            // 电机启停标志
+    DMMotor_Enabled_e enabled_flag;            // 电机使能标志
+
     DaemonInstance* motor_daemon;
     uint32_t lost_cnt;
+
 }DMMotorInstance;
 
 typedef enum
@@ -96,6 +105,11 @@ DMMotorInstance *DMMotorInit(Motor_Init_Config_s *config);
  * @param ref 设定参考值
  */
 void DMMotorSetRef(DMMotorInstance *motor, float ref);
+
+/**
+ * @brief 该函数被motor_task调用运行在rtos上,motor_stask内通过osDelay()确定控制频率
+ */
+void DMMotorControl();
 
 /**
  * @brief 修改电机闭环目标(外层闭环)
