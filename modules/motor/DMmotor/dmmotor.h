@@ -6,6 +6,10 @@
 #include "motor_def.h"
 #include "daemon.h"
 
+#ifndef DM_CONSTRAIN
+#define DM_CONSTRAIN
+#pragma message "check MIN, MAX values for DM_P, DM_V, DM_T"
+#endif
 #define DM_MOTOR_CNT 4
 
 #define DM_P_MIN  (-12.5f)
@@ -143,7 +147,7 @@ void DMMotorStop(DMMotorInstance *motor);
  *
  */
 void DMMotorCaliEncoder(DMMotorInstance *motor);
-
+/*
 void DMMotorControlInit();
-
+*/
 #endif // !DMMOTOR

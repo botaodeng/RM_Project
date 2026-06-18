@@ -9,8 +9,8 @@
 #include "bsp_log.h"
 
 static uint8_t idx=0; // register idx,是该文件的全局电机索引,在注册时使用
-static DMMotorInstance *dm_motor_instance[DM_MOTOR_CNT];
-static osThreadId dm_task_handle[DM_MOTOR_CNT];
+static DMMotorInstance *dm_motor_instance[DM_MOTOR_CNT] = {NULL};
+// static osThreadId dm_task_handle[DM_MOTOR_CNT];
 /* 两个用于将uint值和float值进行映射的函数,在设定发送值和解析反馈值时使用 */
 static uint16_t float_to_uint(float x, float x_min, float x_max, uint8_t bits)
 {
@@ -42,6 +42,7 @@ static void DMMotorDecode(CANInstance *motor_can)
     DaemonReload(motor->motor_daemon);
 
     measure->last_position = measure->position;
+
     tmp = (uint16_t)((rxbuff[1] << 8) | rxbuff[2]);
     measure->position = uint_to_float(tmp, DM_P_MIN, DM_P_MAX, 16);
 
@@ -124,7 +125,8 @@ void DMMotorOuterLoop(DMMotorInstance *motor, Closeloop_Type_e type)
     motor->motor_settings.outer_loop_type = type;
 }
 
-
+/* 暂时不创建任务,由application层调用motor task中的函数进行控制 */
+/*
 //@Todo: 目前只实现了力控，更多位控PID等请自行添加
 //并非按照设定要求处理，重新按照djimotor处理
 void DMMotorTask(void const *argument)
@@ -168,8 +170,7 @@ void DMMotorTask(void const *argument)
     }
 }
 
-/* 暂时不创建任务,由application层调用motor task中的函数进行控制 */
-/*
+
 void DMMotorControlInit()
 {
     char dm_task_name[5] = "dm";
@@ -211,13 +212,48 @@ void DMMotorControl()
             continue;
         
         // 控制计算
+        if(motor_setting->motor_reverse_flag == MOTOR_DIRECTION_REVERSE)
+            pid_ref *= -1;
+        
+        // pid_ref会顺次通过被启用的闭环充当数据的载体
+        // 计算位置环,只有启用位置环且外层闭环为位置时会计算速度环输出
+        if ((motor_setting->close_loop_type & ANGLE_LOOP) && motor_setting->outer_loop_type == ANGLE_LOOP)
+        {
+            if (motor_setting->angle_feedback_source == OTHER_FEED)
+                pid_measure = *motor_controller->other_angle_feedback_ptr;
+            else
+                pid_measure = measure->position; // MOTOR_FEED,对total angle闭环,防止在边界处出现突跃
+            // 更新pid_ref进入下一个环
+            pid_ref = PIDCalculate(&motor_controller->angle_PID, pid_measure, pid_ref);
+        }
 
+        // 计算速度环,(外层闭环为速度或位置)且(启用速度环)时会计算速度环
+        if ((motor_setting->close_loop_type & SPEED_LOOP) && (motor_setting->outer_loop_type & (ANGLE_LOOP | SPEED_LOOP)))
+        {
+            if (motor_setting->feedforward_flag & SPEED_FEEDFORWARD)
+                pid_ref += *motor_controller->speed_feedforward_ptr;
 
+            if (motor_setting->speed_feedback_source == OTHER_FEED)
+                pid_measure = *motor_controller->other_speed_feedback_ptr;
+            else // MOTOR_FEED
+                pid_measure = measure->velocity;
+            // 更新pid_ref进入下一个环
+            pid_ref = PIDCalculate(&motor_controller->speed_PID, pid_measure, pid_ref);
+        }
+
+        if(motor_setting->feedback_reverse_flag == FEEDBACK_DIRECTION_REVERSE)
+            pid_ref *= -1;
+
+        set = float_to_uint(pid_ref, DM_T_MIN, DM_T_MAX, 12);
         // CAN发送
         if(motor->stop_flag == MOTOR_STOP)
         {
-            
+            set = 0;
         }
+
+        memset(motor->motor_can_instace->tx_buff, 0, 7);
+        motor->motor_can_instace->tx_buff[6] = (uint8_t)(set >> 8);
+        motor->motor_can_instace->tx_buff[7] = (uint8_t)(set);
         CANTransmit(motor->motor_can_instace, 1);
     }
 }
