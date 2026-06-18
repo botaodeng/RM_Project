@@ -18,6 +18,10 @@
 #define DM_V_MAX  45.0f
 #define DM_T_MIN  (-18.0f)
 #define DM_T_MAX   18.0f
+#define DM_Kp_MIN  (0.0f)
+#define DM_Kp_MAX  (500.0f)
+#define DM_Kd_MIN  (0.0f)
+#define DM_Kd_MAX  (5.0f)
 
 /* 电机测量值结构体,保存电机的反馈值 */
 typedef struct 
@@ -147,6 +151,18 @@ void DMMotorStop(DMMotorInstance *motor);
  *
  */
 void DMMotorCaliEncoder(DMMotorInstance *motor);
+/**
+ * @brief 通过MIT模式发送电机控制指令
+ *
+ * @param motor 要发送控制指令的电机实例
+ * @param p_des 期望位置
+ * @param v_des 期望速度
+ * @param kp 位置环比例增益
+ * @param kd 速度环比例增益
+ * @param t_ff 力矩
+ */
+void DMMotorMITSend(CANInstance *can_instance, float p_des, float v_des, float kp, float kd, float t_ff);
+
 /*
 void DMMotorControlInit();
 */

@@ -191,11 +191,10 @@ void DMMotorControlInit()
 
 void DMMotorControl()
 {
-    int16_t set;        // 电机控制CAN发送设定值
     DMMotorInstance *motor;
     Motor_Control_Setting_s *motor_setting; // 电机控制参数
     Motor_Controller_s *motor_controller;   // 电机控制器
-    DM_Motor_Measure_s *measure;           // 电机测量值
+    DM_Motor_Measure_s *measure;            // 电机测量值
     float pid_measure, pid_ref;             // 电机PID测量值和设定值
 
     // 遍历所有电机实例,进行控制计算和CAN发送
@@ -243,19 +242,70 @@ void DMMotorControl()
 
         if(motor_setting->feedback_reverse_flag == FEEDBACK_DIRECTION_REVERSE)
             pid_ref *= -1;
-
-        set = float_to_uint(pid_ref, DM_T_MIN, DM_T_MAX, 12);
-        // CAN发送
+        
+        // 如果电机处于停止状态,将pid_ref置为0
         if(motor->stop_flag == MOTOR_STOP)
         {
-            set = 0;
+            pid_ref = 0;
         }
 
-        memset(motor->motor_can_instace->tx_buff, 0, 7);
-        motor->motor_can_instace->tx_buff[6] = (uint8_t)(set >> 8);
-        motor->motor_can_instace->tx_buff[7] = (uint8_t)(set);
-        CANTransmit(motor->motor_can_instace, 1);
+        // 将pid_ref转换为电机设定值并通过CAN发送
+        DMMotorMITSend(motor->motor_can_instace, 0.0f, 0.0f, 0.0f, 0.0f , pid_ref);
+        
+        
     }
+}
+
+void DMMotorMITSend(CANInstance *can_instance, float p_des, float v_des, float kp, float kd, float t_ff)
+{
+    // 限幅处理，确保发送的控制量在电机允许的范围内
+    if(p_des < DM_P_MIN)
+        p_des = DM_P_MIN;
+    else if(p_des > DM_P_MAX)
+        p_des = DM_P_MAX;
+    
+    if(v_des < DM_V_MIN)
+        v_des = DM_V_MIN;
+    else if(v_des > DM_V_MAX)
+        v_des = DM_V_MAX;
+    
+    if(t_ff < DM_T_MIN)
+        t_ff = DM_T_MIN;
+    else if(t_ff > DM_T_MAX)
+        t_ff = DM_T_MAX;
+    
+    if(kp < DM_Kp_MIN)
+        kp = DM_Kp_MIN;
+    else if(kp > DM_Kp_MAX)
+        kp = DM_Kp_MAX;
+    
+    if(kd < DM_Kd_MIN)
+        kd = DM_Kd_MIN;
+    else if(kd > DM_Kd_MAX)
+        kd = DM_Kd_MAX;
+    
+    if(t_ff < DM_T_MIN)
+        t_ff = DM_T_MIN;
+    else if(t_ff > DM_T_MAX)
+        t_ff = DM_T_MAX;
+
+    // 将浮点数转换为整数，以便通过CAN总线发送
+    uint16_t p_int  = float_to_uint(p_des, DM_P_MIN, DM_P_MAX, 16);
+    uint16_t v_int  = float_to_uint(v_des, DM_V_MIN, DM_V_MAX, 12);
+    uint16_t kp_int = float_to_uint(kp, DM_Kp_MIN, DM_Kp_MAX, 12);
+    uint16_t kd_int = float_to_uint(kd, DM_Kd_MIN, DM_Kd_MAX, 12);
+    uint16_t t_int  = float_to_uint(t_ff, DM_T_MIN, DM_T_MAX, 12);
+
+    can_instance->tx_buff[0] = (uint8_t)(p_int >> 8);
+    can_instance->tx_buff[1] = (uint8_t)(p_int);
+    can_instance->tx_buff[2] = (uint8_t)(v_int >> 4);
+    can_instance->tx_buff[3] = (uint8_t)(((v_int & 0xF) << 4) | (kp_int >> 8));
+    can_instance->tx_buff[4] = (uint8_t)(kp_int);
+    can_instance->tx_buff[5] = (uint8_t)(kd_int >> 4);
+    can_instance->tx_buff[6] = (uint8_t)(((kd_int & 0xF) << 4) | (t_int >> 8));
+    can_instance->tx_buff[7] = (uint8_t)(t_int);
+
+    CANTransmit(can_instance, 1);
 }
 
 void DMMotorStop(DMMotorInstance *motor)
