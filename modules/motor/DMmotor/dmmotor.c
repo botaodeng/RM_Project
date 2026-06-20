@@ -43,6 +43,10 @@ static void DMMotorDecode(CANInstance *motor_can)
 
     measure->last_position = measure->position;
 
+    measure->id = (uint8_t)(rxbuff[0] & 0x0F);
+
+    measure->state = (uint8_t)(rxbuff[0] >> 4);
+
     tmp = (uint16_t)((rxbuff[1] << 8) | rxbuff[2]);
     measure->position = uint_to_float(tmp, DM_P_MIN, DM_P_MAX, 16);
 
@@ -95,8 +99,6 @@ DMMotorInstance *DMMotorInit(Motor_Init_Config_s *config)
     };
     motor->motor_daemon = DaemonRegister(&conf);
 
-    DMMotorEnable(motor);
-
     dm_motor_instance[idx++] = motor;
     return motor;
 }
@@ -109,8 +111,11 @@ void DMMotorSetRef(DMMotorInstance *motor, float ref)
 void DMMotorEnable(DMMotorInstance *motor)
 {
     motor->stop_flag = MOTOR_ENALBED;
-    motor->enabled_flag = DM_ENABLED;
-    DMMotorSetMode(DM_CMD_MOTOR_MODE, motor);
+    if(motor->enabled_flag == DM_DISABLED)
+    {
+        motor->enabled_flag = DM_ENABLED;
+        DMMotorSetMode(DM_CMD_MOTOR_MODE, motor);
+    }
 }
 
 void DMMotorDisable(DMMotorInstance *motor)
@@ -268,11 +273,6 @@ void DMMotorMITSend(CANInstance *can_instance, float p_des, float v_des, float k
         v_des = DM_V_MIN;
     else if(v_des > DM_V_MAX)
         v_des = DM_V_MAX;
-    
-    if(t_ff < DM_T_MIN)
-        t_ff = DM_T_MIN;
-    else if(t_ff > DM_T_MAX)
-        t_ff = DM_T_MAX;
     
     if(kp < DM_Kp_MIN)
         kp = DM_Kp_MIN;

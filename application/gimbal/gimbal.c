@@ -54,7 +54,7 @@ void GimbalInit()
             .close_loop_type = ANGLE_LOOP | SPEED_LOOP,
             .motor_reverse_flag = MOTOR_DIRECTION_NORMAL,
         },
-        .motor_type = GM6020};
+        .motor_type = DM4310};
     // PITCH
     Motor_Init_Config_s pitch_config = {
         .can_init_config = {
