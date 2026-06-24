@@ -138,3 +138,8 @@ CAN comm的通信协议如下：
 接收的流程见代码注释。
 
 流程图如下：![未命名文件](../../.assets/CANcomm.png)
+
+
+#Comm&Urgent
+
+将总线内容根据频率需求分成common和urgent两部分，common保持低频发送，用于处理底盘移动等低频任务，urgent保持高频速率，计划熟虑1kHz左右，用于yaw控制等需要上下板高速通信的内容

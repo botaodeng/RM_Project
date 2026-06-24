@@ -138,6 +138,7 @@ modules/referee/referee_task.c \
 modules/remote/remote_control.c \
 modules/super_cap/super_cap.c \
 modules/can_comm/can_comm.c \
+modules/can_comm/can_urgent.c \
 modules/message_center/message_center.c \
 modules/daemon/daemon.c \
 modules/alarm/buzzer.c \
