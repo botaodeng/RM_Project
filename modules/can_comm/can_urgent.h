@@ -3,6 +3,7 @@
 
 #include "bsp_can.h"
 #include "daemon.h"
+#include <stdint.h>
 
 typedef enum {
     CANURGENT_ROLE_GIMBAL = 0,
@@ -19,7 +20,7 @@ typedef enum {
 typedef struct __attribute__((packed)) {
     int16_t yaw_angle_ref;
     int16_t yaw_speed_ref;
-    int16_t gimbal_gyro_z;
+    int16_t yaw_torque_ref;
     uint8_t mode;
     uint8_t seq;
 } YawUrgentCmd_s; // 8 bytes
@@ -71,9 +72,8 @@ CANUrgentInstance* CANUrgentInit(CAN_Urgent_Init_Config_s* config);
  * @brief 通过CANUrgent发送数据
  *
  * @param instance canurgent实例
- * @param data 注意此地址的有效数据长度为8字节
  */
-void CANUrgentSend(CANUrgentInstance *instance, uint8_t *data);
+void CANUrgentSend(CANUrgentInstance *instance);
 
 /**
  * @brief 获取CANUrgent接收的数据,需要自己使用强制类型转换将返回的void指针转换成指定类型
