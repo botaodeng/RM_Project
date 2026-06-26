@@ -18,9 +18,12 @@
 #define PTICH_HORIZON_ANGLE (PITCH_HORIZON_ECD * ECD_ANGLE_COEF_DJI) // pitch水平时电机的角度,0-360
 
 /* cmd应用包含的模块实例指针和交互信息存储*/
-#ifdef GIMBAL_BOARD // 对双板的兼容,条件编译
+#if defined(GIMBAL_BOARD) || defined(CHASSIS_BOARD) // 对双板的兼容,条件编译
 #include "can_comm.h"
-static CANCommInstance *cmd_can_comm; // 双板通信
+#include "can_urgent.h"
+
+CANUrgentInstance *cmd_can_urgent = NULL;
+CANCommInstance *cmd_can_comm = NULL;
 #endif
 #ifdef ONE_BOARD
 static Publisher_t *chassis_cmd_pub;   // 底盘控制消息发布者
@@ -73,7 +76,40 @@ void RobotCMDInit()
         .send_data_len = sizeof(Chassis_Ctrl_Cmd_s),
     };
     cmd_can_comm = CANCommInit(&comm_conf);
+
+    CANUrgentInit_Config_s urgent_conf = {
+        .can_config = {
+            .can_handle = &hcan1,
+            .tx_id = 0x301,
+            .rx_id = 0x302,
+        },
+        .role = CANURGENT_ROLE_GIMBAL
+    };
+    cmd_can_urgent = CANUrgentInit(&urgent_conf);
 #endif // GIMBAL_BOARD
+#ifdef CHASSIS_BOARD
+
+    CAN_Urgent_Init_Config_s urgent_conf = {
+        .can_config = {
+            .can_handle = &hcan2,
+            .tx_id = 0x302,
+            .rx_id = 0x301,
+        },
+        .role = CANURGENT_ROLE_CHASSIS
+    };
+    cmd_can_urgent = CANUrgentInit(&urgent_conf);
+
+    CANComm_Init_Config_s comm_conf = {
+        .can_config = {
+            .can_handle = &hcan2,
+            .tx_id = 0x311,
+            .rx_id = 0x312,
+        },
+        .recv_data_len = sizeof(Chassis_Ctrl_Cmd_s),
+        .send_data_len = sizeof(Chassis_Upload_Data_s),
+    };
+    cmd_can_comm = CANCommInit(&comm_conf); // can comm初始化
+#endif // CHASSIS_BOARD
     gimbal_cmd_send.pitch = 0;
 
     robot_state = ROBOT_READY; // 启动时机器人进入工作模式,后续加入所有应用初始化完成之后再进入
@@ -274,6 +310,18 @@ static void EmergencyHandler()
         shoot_cmd_send.load_mode = LOAD_STOP;
         LOGERROR("[CMD] emergency stop!");
     }
+    #if (defined CHASSIS_BOARD || defined GIMBAL_BOARD)
+    if(CANCommIsOnline(cmd_can_comm) == 0 || CANUrgentIsOnline(cmd_can_urgent) == 0)
+    {
+        robot_state = ROBOT_STOP;
+        gimbal_cmd_send.gimbal_mode = GIMBAL_ZERO_FORCE;
+        chassis_cmd_send.chassis_mode = CHASSIS_ZERO_FORCE;
+        shoot_cmd_send.shoot_mode = SHOOT_OFF;
+        shoot_cmd_send.friction_mode = FRICTION_OFF;
+        shoot_cmd_send.load_mode = LOAD_STOP;
+        LOGERROR("[CMD] emergency stop due to CAN bus offline!");
+    }
+    #endif //双板模式额外增加一个急停
     // 遥控器最右侧开关，左边两个开关为[上],恢复正常运行
     if (switch_is_up(rc_data[TEMP].switch_swd) && switch_is_up(rc_data[TEMP].switch_swa) && switch_is_up(rc_data[TEMP].switch_swb) && RemoteControlIsOnline()) // 还需添加重要应用和模块在线的判断
     {
@@ -320,6 +368,9 @@ void RobotCMDTask()
     PubPushMessage(chassis_cmd_pub, (void *)&chassis_cmd_send);
 #endif // ONE_BOARD
 #ifdef GIMBAL_BOARD
+    chassis_cmd_send.loader_mode = shoot_cmd_send.load_mode;
+    chassis_cmd_send.friction_mode = shoot_cmd_send.friction_mode;
+    chassis_cmd_send.shoot_rate = shoot_cmd_send.shoot_rate;
     CANCommSend(cmd_can_comm, (void *)&chassis_cmd_send);
 #endif // GIMBAL_BOARD
     PubPushMessage(shoot_cmd_pub, (void *)&shoot_cmd_send);

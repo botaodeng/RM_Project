@@ -32,7 +32,7 @@
 #ifdef CHASSIS_BOARD // 如果是底盘板,使用板载IMU获取底盘转动角速度
 #include "can_comm.h"
 #include "ins_task.h"
-static CANCommInstance *chasiss_can_comm; // 双板通信CAN comm
+#include "robot_cmd.h"
 attitude_t *Chassis_IMU_data;
 #endif // CHASSIS_BOARD
 #ifdef ONE_BOARD
@@ -62,27 +62,19 @@ void ChassisInit()
         .can_init_config.can_handle = &hcan3,
         .controller_param_init_config = {
             .speed_PID = {
-                .Kp = 10, // 4.5
+                .Kp = 2.0, // 4.5
                 .Ki = 0,  // 0
                 .Kd = 0,  // 0
                 .IntegralLimit = 3000,
                 .Improve = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
                 .MaxOut = 12000,
             },
-            .current_PID = {
-                .Kp = 0.5, // 0.4
-                .Ki = 0,   // 0
-                .Kd = 0,
-                .IntegralLimit = 3000,
-                .Improve = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
-                .MaxOut = 15000,
-            },
         },
         .controller_setting_init_config = {
             .angle_feedback_source = MOTOR_FEED,
             .speed_feedback_source = MOTOR_FEED,
             .outer_loop_type = SPEED_LOOP,
-            .close_loop_type = SPEED_LOOP | CURRENT_LOOP,
+            .close_loop_type = SPEED_LOOP,
         },
         .motor_type = M3508,
     };
@@ -119,6 +111,7 @@ void ChassisInit()
 #ifdef CHASSIS_BOARD
     Chassis_IMU_data = INS_Init(); // 底盘IMU初始化
 
+    /*
     CANComm_Init_Config_s comm_conf = {
         .can_config = {
             .can_handle = &hcan2,
@@ -129,6 +122,8 @@ void ChassisInit()
         .send_data_len = sizeof(Chassis_Upload_Data_s),
     };
     chasiss_can_comm = CANCommInit(&comm_conf); // can comm初始化
+    */
+
 #endif                                          // CHASSIS_BOARD
 
 #ifdef ONE_BOARD // 单板控制整车,则通过pubsub来传递消息
@@ -211,7 +206,7 @@ void ChassisTask()
     SubGetMessage(chassis_sub, &chassis_cmd_recv);
 #endif
 #ifdef CHASSIS_BOARD
-    chassis_cmd_recv = *(Chassis_Ctrl_Cmd_s *)CANCommGet(chasiss_can_comm);
+    chassis_cmd_recv = *(Chassis_Ctrl_Cmd_s *)CANCommGet(cmd_can_comm);
 #endif // CHASSIS_BOARD
 
     if (chassis_cmd_recv.chassis_mode == CHASSIS_ZERO_FORCE)
@@ -278,6 +273,6 @@ void ChassisTask()
     PubPushMessage(chassis_pub, (void *)&chassis_feedback_data);
 #endif
 #ifdef CHASSIS_BOARD
-    CANCommSend(chasiss_can_comm, (void *)&chassis_feedback_data);
+    CANCommSend(cmd_can_comm, (void *)&chassis_feedback_data);
 #endif // CHASSIS_BOARD
 }
