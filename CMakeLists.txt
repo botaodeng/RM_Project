@@ -107,9 +107,19 @@ target_link_libraries(${PROJECT_NAME}.elf ${DSP_NAME} m) # link DSP lib and math
 
 add_custom_command(
     TARGET ${PROJECT_NAME}.elf POST_BUILD
-    COMMAND ${CMAKE_OBJCOPY} -Oihex $<TARGET_FILE:${PROJECT_NAME}.elf> ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.hex
-    COMMAND ${CMAKE_OBJCOPY} -Obinary $<TARGET_FILE:${PROJECT_NAME}.elf> ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.bin
-    COMMENT "Building hex & bin file..."
-    COMMENT "EXCUTABLE SIZE:"
-    COMMAND ${SIZE} ${PROJECT_NAME}.elf
-  )
+
+    COMMAND ${CMAKE_OBJCOPY} -Oihex
+            $<TARGET_FILE:${PROJECT_NAME}.elf>
+            ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.hex
+
+    COMMAND ${CMAKE_OBJCOPY} -Obinary
+            $<TARGET_FILE:${PROJECT_NAME}.elf>
+            ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.bin
+
+    COMMAND ${CMAKE_COMMAND} -E echo "Building hex & bin file..."
+
+    COMMAND ${CMAKE_COMMAND} -E echo "EXECUTABLE SIZE:"
+    COMMAND ${SIZE} $<TARGET_FILE:${PROJECT_NAME}.elf>
+
+    VERBATIM
+)

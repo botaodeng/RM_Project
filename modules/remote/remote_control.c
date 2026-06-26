@@ -39,11 +39,12 @@ static void sbus_to_rc(const uint8_t *sbus_buf)
     rc_ctrl[TEMP].rocker_l1 = (((sbus_buf[2] >> 3) | (sbus_buf[3] << 5)) & 0x07ff) - RC_CH_VALUE_OFFSET;                       //!< Channel 1
     rc_ctrl[TEMP].rocker_r1 = (((sbus_buf[3] >> 6) | (sbus_buf[4] << 2) | (sbus_buf[5] << 10)) & 0x07ff) - RC_CH_VALUE_OFFSET; //!< Channel 2
     rc_ctrl[TEMP].rocker_l_ = (((sbus_buf[5] >> 1) | (sbus_buf[6] << 7)) & 0x07ff) - RC_CH_VALUE_OFFSET;                       //!< Channel 3
-    RectifyRCjoystick();
     
     // VRA VRB,直接解算
     rc_ctrl[TEMP].vra = (((sbus_buf[6] >> 4) | (sbus_buf[7] << 4)) & 0x07FF) - RC_CH_VALUE_OFFSET;                             //!< Channel 4
     rc_ctrl[TEMP].vrb = (((sbus_buf[7] >> 7) | (sbus_buf[8] << 1) | (sbus_buf[9] << 9)) & 0x07ff) - RC_CH_VALUE_OFFSET;        //!< Channel 5
+
+    RectifyRCjoystick();
 
     // 开关
     rc_ctrl[TEMP].switch_swa = (((sbus_buf[9] >> 2) | (sbus_buf[10] << 6)) & 0x07FF);      //!< Switch left most
