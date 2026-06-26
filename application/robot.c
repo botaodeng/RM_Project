@@ -12,6 +12,7 @@
 #if defined(ONE_BOARD) || defined(CHASSIS_BOARD)
 #include "chassis.h"
 #include "robot_cmd.h"
+#include "chassis_service.h"
 #endif
 
 #if defined(ONE_BOARD) || defined(GIMBAL_BOARD)
@@ -41,6 +42,10 @@ void RobotInit()
     ChassisInit();
 #endif
 
+#if defined(CHASSIS_BOARD)
+    ChassisServiceInit();
+#endif
+
     OSTaskInit(); // 创建基础任务
 
     // 初始化完成,开启中断
@@ -57,6 +62,10 @@ void RobotTask()
 
 #if defined(ONE_BOARD) || defined(CHASSIS_BOARD)
     ChassisTask();
+#endif
+
+#if defined(CHASSIS_BOARD)
+    ChassisServiceTask();
 #endif
 
 }

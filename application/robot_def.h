@@ -155,10 +155,12 @@ typedef struct
     chassis_mode_e chassis_mode;
     int chassis_speed_buff;
     // UI部分
+    #if defined(CHASSIS_BOARD) || defined(GIMBAL_BOARD)
     // 其他任务部分
     loader_mode_e loader_mode;      //拨盘状态
     friction_mode_e friction_mode;  //摩擦轮状态
     float shoot_rate;               //射频 发/秒
+    #endif
 
 } Chassis_Ctrl_Cmd_s;
 

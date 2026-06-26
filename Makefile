@@ -146,6 +146,7 @@ application/gimbal/gimbal.c \
 application/chassis/chassis.c \
 application/shoot/shoot.c \
 application/cmd/robot_cmd.c \
+application/chassis_service/chassis_service.c \
 application/robot.c \
 Core/Src/i2c.c
 
@@ -227,6 +228,7 @@ C_INCLUDES =  \
 -Iapplication/shoot \
 -Iapplication/gimbal \
 -Iapplication/cmd \
+-Iapplication/chassis_service \
 -Iapplication \
 -Ibsp/dwt \
 -Ibsp/can \
