@@ -6,13 +6,21 @@
 #include "chassis_service.h"
 
 #include "dji_motor.h"
+#include "dmmotor.h"
 #include "can_comm.h"
+#include "can_urgent.h"
 
+#include "bsp_can.h"
+// yaw电机实例,用于控制yaw电机
+static DMMotorInstance *yaw;
+
+static YawUrgentCmd_s yaw_cmd_recv;
+static YawUrgentFeedback_s yaw_feedback_data;
 
 // 拨盘电机实例,用于控制拨盘电机
 static DJIMotorInstance *loader;
 
-static Chassis_Ctrl_Cmd_s chassis_cmd_recv;  
+static Chassis_Ctrl_Cmd_s chassis_cmd_recv;
 
 
 void ChassisServiceInit()
@@ -57,6 +65,9 @@ void ChassisServiceInit()
         .motor_type = M2006 // 英雄使用m3508
     };
     loader = DJIMotorInit(&loader_config);
+
+    // yaw电机
+
 }
 
 void ChassisServiceTask()
@@ -116,6 +127,26 @@ void ChassisServiceTask()
             ; // 未知模式,停止运行,检查指针越界,内存溢出等问题
     }
 
+}
+
+void ChassisHighSpeedTask()
+{
+    if(cmd_can_urgent->role == CANURGENT_ROLE_GIMBAL)
+    {
+        // 处理云台板接收到的数据
+        yaw_feedback_data = *(YawUrgentFeedback_s *)CANUrgentGet(cmd_can_urgent);
+
+    }
+    else if(cmd_can_urgent->role == CANURGENT_ROLE_CHASSIS)
+    {
+        // 处理底盘板接收到的数据
+        yaw_cmd_recv = *(YawUrgentCmd_s *)CANUrgentGet(cmd_can_urgent);
+    }
+    else
+    {
+        // 未知角色
+        cmd_can_urgent->online = CANURGENT_STATE_ERROR;
+    }
 }
 
 #endif // CHASSIS_SERVICE_C

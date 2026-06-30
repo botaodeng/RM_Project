@@ -95,6 +95,7 @@ void CANUrgentSend(CANUrgentInstance *instance)
         data[5] = ((uint16_t)(instance->yaw_cmd.yaw_torque_ref) >> 8) & 0xFF;
         data[6] = instance->yaw_cmd.mode;
         data[7] = instance->yaw_cmd.seq;
+        instance->yaw_cmd_last = instance->yaw_cmd;
         CANSetDLC(instance->can_ins, 8);
         memcpy(instance->can_ins->tx_buff, data, 8);
         CANTransmit(instance->can_ins,0.1f);
@@ -112,6 +113,7 @@ void CANUrgentSend(CANUrgentInstance *instance)
         data[5] = ((uint16_t)(instance->yaw_fb.yaw_torque) >> 8) & 0xFF;
         data[6] = instance->yaw_fb.error;
         data[7] = instance->yaw_fb.seq;
+        instance->yaw_fb_last = instance->yaw_fb;
         CANSetDLC(instance->can_ins, 8);
         memcpy(instance->can_ins->tx_buff, data, 8);
         CANTransmit(instance->can_ins,0.1f);

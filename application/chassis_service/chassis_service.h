@@ -13,4 +13,11 @@ void ChassisServiceInit();
  * 
  */
 void ChassisServiceTask();
+
+/**
+ * @brief 机器人底盘其他控制任务,高速任务,设计为1kHz频率运行
+ * 
+ */
+void ChassisHighSpeedTask();
+
 #endif // CHASSIS_SERVICE_H
