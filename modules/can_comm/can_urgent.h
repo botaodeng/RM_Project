@@ -89,4 +89,9 @@ void *CANUrgentGet(CANUrgentInstance *instance);
  * @return uint8_t 
  */
 uint8_t CANUrgentIsOnline(CANUrgentInstance *instance);
+
+/**
+ * @brief CANUrgent任务函数,在motor task中调用,用于处理CANUrgent的发送和接收，并且实现双板控制电机
+ */
+void CANUrgentTask();
 #endif // !CAN_URGENT_H

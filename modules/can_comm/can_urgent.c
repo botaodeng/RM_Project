@@ -4,6 +4,9 @@
 #include "can_urgent.h"
 #include <stdlib.h>
 #include <string.h>
+#include "dmmotor.h"
+
+static CANUrgentInstance* urgent_ins={NULL};
 
 /**
  * @brief CANUrgent接收回调函数
@@ -78,6 +81,7 @@ CANUrgentInstance* CANUrgentInit(CAN_Urgent_Init_Config_s* config)
         .reload_count = config->deamon_count,
     };
     instance->daemon = DaemonRegister(&daemon_config);
+    urgent_ins = instance;
     return instance;
 }
 
@@ -146,5 +150,115 @@ uint8_t CANUrgentIsOnline(CANUrgentInstance *instance)
         return 0;
 
     return DaemonIsOnline(instance->daemon);
+}
+
+void CANUrgentTask()
+{
+    if (urgent_ins == NULL)
+    {
+        return;
+    }
+    if(urgent_ins->role == CANURGENT_ROLE_GIMBAL)
+    {
+        DMMotorInstance *motor = dm_motor_instance[0]; // 云台电机是第一个电机实例,以后再做规范化设定
+        Motor_Control_Setting_s *motor_setting; // 电机控制参数
+        Motor_Controller_s *motor_controller;   // 电机控制器
+        DM_Motor_Measure_s *measure = &motor->measure;            // 电机测量值
+        float pid_measure, pid_ref;             // 电机PID测量值和设定值
+        YawUrgentFeedback_s yaw_fb = urgent_ins->yaw_fb, yaw_fb_last = urgent_ins->yaw_fb;
+
+        if (motor == NULL)
+            return;
+        motor_setting = &motor->motor_settings;
+        motor_controller = &motor->motor_controller;
+        measure->position = yaw_fb.yaw_motor_angle;
+        measure->velocity = yaw_fb.yaw_motor_speed;
+        measure->torque = yaw_fb.yaw_torque;
+        measure->last_position = yaw_fb_last.yaw_motor_angle;
+        pid_ref = motor_controller->pid_ref;
+
+        // 防止给未使能的电机发送控制信号
+        if(motor->enabled_flag == DM_DISABLED || motor->stop_flag == MOTOR_STOP)
+            urgent_ins->yaw_cmd.mode = 0;
+        else
+        {
+            urgent_ins->yaw_cmd.mode = 1;
+        }
+        
+        // 控制计算
+        if(motor_setting->motor_reverse_flag == MOTOR_DIRECTION_REVERSE)
+            pid_ref *= -1;
+        
+        // pid_ref会顺次通过被启用的闭环充当数据的载体
+        // 计算位置环,只有启用位置环且外层闭环为位置时会计算速度环输出
+        if ((motor_setting->close_loop_type & ANGLE_LOOP) && motor_setting->outer_loop_type == ANGLE_LOOP)
+        {
+            if (motor_setting->angle_feedback_source == OTHER_FEED)
+                pid_measure = *motor_controller->other_angle_feedback_ptr;
+            else
+                pid_measure = measure->position; // MOTOR_FEED,对total angle闭环,防止在边界处出现突跃
+            // 更新pid_ref进入下一个环
+            pid_ref = PIDCalculate(&motor_controller->angle_PID, pid_measure, pid_ref);
+        }
+
+        // 计算速度环,(外层闭环为速度或位置)且(启用速度环)时会计算速度环
+        if ((motor_setting->close_loop_type & SPEED_LOOP) && (motor_setting->outer_loop_type & (ANGLE_LOOP | SPEED_LOOP)))
+        {
+            if (motor_setting->feedforward_flag & SPEED_FEEDFORWARD)
+                pid_ref += *motor_controller->speed_feedforward_ptr;
+
+            if (motor_setting->speed_feedback_source == OTHER_FEED)
+                pid_measure = *motor_controller->other_speed_feedback_ptr;
+            else // MOTOR_FEED
+                pid_measure = measure->velocity;
+            // 更新pid_ref进入下一个环
+            pid_ref = PIDCalculate(&motor_controller->speed_PID, pid_measure, pid_ref);
+        }
+
+        if(motor_setting->feedback_reverse_flag == FEEDBACK_DIRECTION_REVERSE)
+            pid_ref *= -1;
+        
+        // 如果电机处于停止状态,将pid_ref置为0
+        if(motor->stop_flag == MOTOR_STOP)
+        {
+            pid_ref = 0;
+        }
+        // 云台板发送数据
+        urgent_ins->yaw_cmd.yaw_torque_ref = pid_ref;
+        CANUrgentSend(urgent_ins);
+    }
+    else if(urgent_ins->role == CANURGENT_ROLE_CHASSIS)
+    {
+        static uint16_t enable_send_cnt = 0;
+        // 底盘板发送数据
+        DM_Motor_Measure_s measure = dm_motor_instance[0]->measure;
+        YawUrgentFeedback_s yaw_fb;
+        YawUrgentCmd_s yaw_cmd;
+        CANInstance *can_ins = dm_motor_instance[0]->motor_can_instace;
+        uint8_t mode = urgent_ins->yaw_cmd.mode;
+        yaw_cmd = urgent_ins->yaw_cmd;
+        if(mode == 1)
+            DMMotorMITSend(can_ins,0.0f,0.0f,0.0f,0.0f,yaw_cmd.yaw_torque_ref);
+        else if(mode == 0 && dm_motor_instance[0]->enabled_flag == DM_ENABLED)
+            DMMotorMITSend(can_ins,0.0f,0.0f,0.0f,0.0f,0.0f);
+        yaw_fb.yaw_motor_angle = measure.position;
+        yaw_fb.yaw_motor_speed = measure.velocity;
+        yaw_fb.yaw_torque = measure.torque;
+        urgent_ins->yaw_fb = yaw_fb;
+        CANUrgentSend(urgent_ins);
+        if (++enable_send_cnt >= 500)
+        {
+            enable_send_cnt = 0;
+            if(mode == 1)
+            {
+                DMMotorEnable(dm_motor_instance[0]);
+                dm_motor_instance[0]->enabled_flag = DM_ENABLED;
+            }
+            
+        }
+    }
+    else{
+        return;
+    }
 }
 #endif // !CAN_URGENT_C

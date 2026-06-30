@@ -67,6 +67,39 @@ void ChassisServiceInit()
     loader = DJIMotorInit(&loader_config);
 
     // yaw电机
+     Motor_Init_Config_s yaw_config = {
+        .can_init_config = {
+            .can_handle = &hcan1,
+            .tx_id = 0x2,
+            .rx_id = 0xb
+        },
+        .controller_param_init_config = {
+            .angle_PID = {
+                .Kp = 8, // 8
+                .Ki = 0,
+                .Kd = 0,
+                .DeadBand = 0.1,
+                .Improve = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
+                .IntegralLimit = 100,
+
+                .MaxOut = 500,
+            },
+            .speed_PID = {
+                .Kp = 50,  // 50
+                .Ki = 200, // 200
+                .Kd = 0,
+                .Improve = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
+                .IntegralLimit = 3000,
+                .MaxOut = 20000,
+            },
+        },
+        .controller_setting_init_config = {
+            .outer_loop_type = ANGLE_LOOP,
+            .close_loop_type = ANGLE_LOOP | SPEED_LOOP,
+            .motor_reverse_flag = MOTOR_DIRECTION_NORMAL,
+        },
+        .motor_type = DM4310};
+    yaw = DMMotorInit(&yaw_config);
 
 }
 
@@ -127,26 +160,6 @@ void ChassisServiceTask()
             ; // 未知模式,停止运行,检查指针越界,内存溢出等问题
     }
 
-}
-
-void ChassisHighSpeedTask()
-{
-    if(cmd_can_urgent->role == CANURGENT_ROLE_GIMBAL)
-    {
-        // 处理云台板接收到的数据
-        yaw_feedback_data = *(YawUrgentFeedback_s *)CANUrgentGet(cmd_can_urgent);
-
-    }
-    else if(cmd_can_urgent->role == CANURGENT_ROLE_CHASSIS)
-    {
-        // 处理底盘板接收到的数据
-        yaw_cmd_recv = *(YawUrgentCmd_s *)CANUrgentGet(cmd_can_urgent);
-    }
-    else
-    {
-        // 未知角色
-        cmd_can_urgent->online = CANURGENT_STATE_ERROR;
-    }
 }
 
 #endif // CHASSIS_SERVICE_C
