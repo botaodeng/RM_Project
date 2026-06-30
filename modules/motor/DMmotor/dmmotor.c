@@ -130,14 +130,11 @@ void DMMotorEnable(DMMotorInstance *motor)
     if(motor->enabled_flag == DM_DISABLED)
     {
         motor->enabled_flag = DM_ENABLE_REQUEST;
-        if (motor->enabled_flag == DM_ENABLE_REQUEST)
-        {
             if (DWT_GetTimeline_ms() >= DM_ENABLE_DELAY_MS)
             {
                 DMMotorSetMode(DM_CMD_MOTOR_MODE, motor);
                 motor->enabled_flag = DM_ENABLED;
             }
-        }
     }
 }
 

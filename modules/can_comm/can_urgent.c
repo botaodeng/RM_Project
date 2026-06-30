@@ -252,7 +252,6 @@ void CANUrgentTask()
             if(mode == 1)
             {
                 DMMotorEnable(dm_motor_instance[0]);
-                dm_motor_instance[0]->enabled_flag = DM_ENABLED;
             }
             
         }
