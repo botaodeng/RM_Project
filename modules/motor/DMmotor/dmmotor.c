@@ -9,7 +9,7 @@
 #include "bsp_log.h"
 
 static uint8_t idx=0; // register idx,是该文件的全局电机索引,在注册时使用
-static DMMotorInstance *dm_motor_instance[DM_MOTOR_CNT] = {NULL};
+
 // static osThreadId dm_task_handle[DM_MOTOR_CNT];
 /* 两个用于将uint值和float值进行映射的函数,在设定发送值和解析反馈值时使用 */
 static uint16_t float_to_uint(float x, float x_min, float x_max, uint8_t bits)
@@ -101,6 +101,16 @@ DMMotorInstance *DMMotorInit(Motor_Init_Config_s *config)
 
     dm_motor_instance[idx++] = motor;
     return motor;
+}
+
+void DMMotorChangeFeed(DMMotorInstance *motor, Closeloop_Type_e loop, Feedback_Source_e type)
+{
+    if (loop == ANGLE_LOOP)
+        motor->motor_settings.angle_feedback_source = type;
+    else if (loop == SPEED_LOOP)
+        motor->motor_settings.speed_feedback_source = type;
+    else
+        LOGERROR("[dm_motor] loop type error, check memory access and func param"); // 检查是否传入了正确的LOOP类型,或发生了指针越界
 }
 
 void DMMotorSetRef(DMMotorInstance *motor, float ref)

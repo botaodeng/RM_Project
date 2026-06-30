@@ -12,8 +12,8 @@
 #endif
 #define DM_MOTOR_CNT 4
 
-#define DM_P_MIN  (-12.5f)
-#define DM_P_MAX  12.5f
+#define DM_P_MIN  (-12.5664f)
+#define DM_P_MAX  12.5664f
 #define DM_V_MIN  (-45.0f)
 #define DM_V_MAX  45.0f
 #define DM_T_MIN  (-18.0f)
@@ -22,6 +22,8 @@
 #define DM_Kp_MAX  (500.0f)
 #define DM_Kd_MIN  (0.0f)
 #define DM_Kd_MAX  (5.0f)
+
+
 
 /* 电机测量值结构体,保存电机的反馈值 */
 typedef struct 
@@ -90,6 +92,8 @@ typedef enum
     DM_CMD_CLEAR_ERROR = 0xfb // 清除电机过热错误
 }DMMotor_Mode_e;
 
+static DMMotorInstance *dm_motor_instance[DM_MOTOR_CNT] = {NULL};
+
 /**
  * @brief 调用此函数注册一个DM电机,需要传递较多的初始化参数,请在application初始化的时候调用此函数
  *        推荐传参时像标准库一样构造initStructure然后传入此函数.
@@ -126,6 +130,15 @@ void DMMotorControl();
  * @param outer_loop 外层闭环类型
  */
 void DMMotorOuterLoop(DMMotorInstance *motor,Closeloop_Type_e closeloop_type);
+
+/**
+ * @brief 切换反馈的目标来源,如将角速度和角度的来源换为IMU(小陀螺模式常用)
+ *
+ * @param motor 要切换反馈数据来源的电机
+ * @param loop  要切换反馈数据来源的控制闭环
+ * @param type  目标反馈模式
+ */
+void DMMotorChangeFeed(DMMotorInstance *motor, Closeloop_Type_e loop, Feedback_Source_e type);
 
 /**
  * @brief 使电机进入使能状态
