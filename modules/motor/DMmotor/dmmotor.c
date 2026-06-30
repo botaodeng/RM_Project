@@ -9,9 +9,12 @@
 #include "bsp_log.h"
 
 static uint8_t idx=0; // register idx,是该文件的全局电机索引,在注册时使用
-
+DMMotorInstance *dm_motor_instance[DM_MOTOR_CNT] = {NULL};
 // static osThreadId dm_task_handle[DM_MOTOR_CNT];
 /* 两个用于将uint值和float值进行映射的函数,在设定发送值和解析反馈值时使用 */
+
+
+
 static uint16_t float_to_uint(float x, float x_min, float x_max, uint8_t bits)
 {
     float span = x_max - x_min;
@@ -78,6 +81,8 @@ DMMotorInstance *DMMotorInit(Motor_Init_Config_s *config)
     motor->motor_type = config->motor_type;
     motor->motor_settings = config->controller_setting_init_config;
 
+    motor->enabled_flag = DM_DISABLED;
+    motor->stop_flag = MOTOR_STOP;
 
     // motor controller init 电机控制器初始化，无电流环，不配置
     PIDInit(&motor->motor_controller.speed_PID, &config->controller_param_init_config.speed_PID);
@@ -123,16 +128,28 @@ void DMMotorEnable(DMMotorInstance *motor)
     motor->stop_flag = MOTOR_ENALBED;
     if(motor->enabled_flag == DM_DISABLED)
     {
-        motor->enabled_flag = DM_ENABLED;
-        DMMotorSetMode(DM_CMD_MOTOR_MODE, motor);
+        motor->enabled_flag = DM_ENABLE_REQUEST;
+        if (motor->enabled_flag == DM_ENABLE_REQUEST)
+        {
+            if (DWT_GetTimeline_ms() >= DM_ENABLE_DELAY_MS)
+            {
+                DMMotorSetMode(DM_CMD_MOTOR_MODE, motor);
+                motor->enabled_flag = DM_ENABLED;
+            }
+        }
     }
 }
 
 void DMMotorDisable(DMMotorInstance *motor)
 {
     motor->stop_flag = MOTOR_STOP;
+
+    if (motor->enabled_flag == DM_ENABLED)
+    {
+        DMMotorSetMode(DM_CMD_RESET_MODE, motor);
+    }
+
     motor->enabled_flag = DM_DISABLED;
-    DMMotorSetMode(DM_CMD_RESET_MODE, motor);
 }
 
 void DMMotorOuterLoop(DMMotorInstance *motor, Closeloop_Type_e type)
@@ -224,7 +241,19 @@ void DMMotorControl()
         // 防止给未使能的电机发送控制信号
         if(motor->enabled_flag == DM_DISABLED)
             continue;
-        
+
+        if (motor->enabled_flag == DM_ENABLE_REQUEST)
+        {
+            if (DWT_GetTimeline_ms() >= DM_ENABLE_DELAY_MS)
+            {
+                DMMotorSetMode(DM_CMD_MOTOR_MODE, motor);
+                motor->enabled_flag = DM_ENABLED;
+            }
+
+            // 无论刚刚是否发了使能帧，本轮都不立刻发 MIT 控制帧
+            continue;
+        }
+
         // 控制计算
         if(motor_setting->motor_reverse_flag == MOTOR_DIRECTION_REVERSE)
             pid_ref *= -1;

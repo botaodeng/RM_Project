@@ -23,7 +23,7 @@
 #define DM_Kd_MIN  (0.0f)
 #define DM_Kd_MAX  (5.0f)
 
-
+#define DM_ENABLE_DELAY_MS 2050.0f
 
 /* 电机测量值结构体,保存电机的反馈值 */
 typedef struct 
@@ -53,6 +53,7 @@ typedef enum
 {
     DM_ENABLED = 0,
     DM_DISABLED = 1,
+    DM_ENABLE_REQUEST = 2,
 }DMMotor_Enabled_e;
 
 /* 电机实例结构体,保存电机的测量值,控制设置,PID实例,CAN实例等 */
@@ -92,7 +93,7 @@ typedef enum
     DM_CMD_CLEAR_ERROR = 0xfb // 清除电机过热错误
 }DMMotor_Mode_e;
 
-static DMMotorInstance *dm_motor_instance[DM_MOTOR_CNT] = {NULL};
+extern DMMotorInstance *dm_motor_instance[];
 
 /**
  * @brief 调用此函数注册一个DM电机,需要传递较多的初始化参数,请在application初始化的时候调用此函数
