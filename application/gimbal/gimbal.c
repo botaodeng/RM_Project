@@ -62,7 +62,7 @@ void GimbalInit()
     Motor_Init_Config_s pitch_config = {
         .can_init_config = {
             .can_handle = &hcan2,
-            .tx_id = 2,
+            .tx_id = 3,
         },
         .controller_param_init_config = {
             .angle_PID = {
@@ -83,7 +83,7 @@ void GimbalInit()
             },
             .other_angle_feedback_ptr = &gimba_IMU_data->Pitch,
             // 还需要增加角速度额外反馈指针,注意方向,ins_task.md中有c板的bodyframe坐标系说明
-            .other_speed_feedback_ptr = (&gimba_IMU_data->Gyro[0]),
+            .other_speed_feedback_ptr = (&gimba_IMU_data->Gyro[1]),
         },
         .controller_setting_init_config = {
             .angle_feedback_source = OTHER_FEED,
@@ -120,7 +120,7 @@ void GimbalTask()
         break;
     // 使用陀螺仪的反馈,底盘根据yaw电机的offset跟随云台或视觉模式采用
     case GIMBAL_GYRO_MODE: // 后续只保留此模式
-        //DJIMotorEnable(yaw_motor);
+        DMMotorEnable(yaw_motor);
         DJIMotorEnable(pitch_motor);
         DMMotorChangeFeed(yaw_motor, ANGLE_LOOP, OTHER_FEED);
         DMMotorChangeFeed(yaw_motor, SPEED_LOOP, OTHER_FEED);
@@ -131,7 +131,7 @@ void GimbalTask()
         break;
     // 云台自由模式,使用编码器反馈,底盘和云台分离,仅云台旋转,一般用于调整云台姿态(英雄吊射等)/能量机关
     case GIMBAL_FREE_MODE: // 后续删除,或加入云台追地盘的跟随模式(响应速度更快)
-        //DJIMotorEnable(yaw_motor);
+        DMMotorEnable(yaw_motor);
         DJIMotorEnable(pitch_motor);
         DMMotorChangeFeed(yaw_motor, ANGLE_LOOP, OTHER_FEED);
         DMMotorChangeFeed(yaw_motor, SPEED_LOOP, OTHER_FEED);

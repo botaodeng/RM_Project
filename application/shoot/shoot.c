@@ -27,16 +27,8 @@ void ShootInit()
         },
         .controller_param_init_config = {
             .speed_PID = {
-                .Kp = 0, // 20
+                .Kp = 5, // 20
                 .Ki = 0, // 1
-                .Kd = 0,
-                .Improve = PID_Integral_Limit,
-                .IntegralLimit = 10000,
-                .MaxOut = 15000,
-            },
-            .current_PID = {
-                .Kp = 0, // 0.7
-                .Ki = 0, // 0.1
                 .Kd = 0,
                 .Improve = PID_Integral_Limit,
                 .IntegralLimit = 10000,
@@ -48,7 +40,7 @@ void ShootInit()
             .speed_feedback_source = MOTOR_FEED,
 
             .outer_loop_type = SPEED_LOOP,
-            .close_loop_type = SPEED_LOOP | CURRENT_LOOP,
+            .close_loop_type = SPEED_LOOP,
             .motor_reverse_flag = MOTOR_DIRECTION_NORMAL,
         },
         .motor_type = M3508};
@@ -58,7 +50,7 @@ void ShootInit()
     friction_config.can_init_config.tx_id = 2; // 右摩擦轮,改txid和方向就行
     friction_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_REVERSE;
     friction_r = DJIMotorInit(&friction_config);
-
+    /*
     // 拨盘电机
     Motor_Init_Config_s loader_config = {
         .can_init_config = {
@@ -99,7 +91,7 @@ void ShootInit()
         .motor_type = M2006 // 英雄使用m3508
     };
     loader = DJIMotorInit(&loader_config);
-
+        */
     shoot_pub = PubRegister("shoot_feed", sizeof(Shoot_Upload_Data_s));
     shoot_sub = SubRegister("shoot_cmd", sizeof(Shoot_Ctrl_Cmd_s));
 }
@@ -115,20 +107,20 @@ void ShootTask()
     {
         DJIMotorStop(friction_l);
         DJIMotorStop(friction_r);
-        DJIMotorStop(loader);
+        //DJIMotorStop(loader);
     }
     else // 恢复运行
     {
         DJIMotorEnable(friction_l);
         DJIMotorEnable(friction_r);
-        DJIMotorEnable(loader);
+        //DJIMotorEnable(loader);
     }
 
     // 如果上一次触发单发或3发指令的时间加上不应期仍然大于当前时间(尚未休眠完毕),直接返回即可
     // 单发模式主要提供给能量机关激活使用(以及英雄的射击大部分处于单发)
     // if (hibernate_time + dead_time > DWT_GetTimeline_ms())
     //     return;
-
+    /*
     // 若不在休眠状态,根据robotCMD传来的控制模式进行拨盘电机参考值设定和模式切换
     switch (shoot_cmd_recv.load_mode)
     {
@@ -167,7 +159,7 @@ void ShootTask()
         while (1)
             ; // 未知模式,停止运行,检查指针越界,内存溢出等问题
     }
-
+    */
     // 确定是否开启摩擦轮,后续可能修改为键鼠模式下始终开启摩擦轮(上场时建议一直开启)
     if (shoot_cmd_recv.friction_mode == FRICTION_ON)
     {
@@ -187,8 +179,8 @@ void ShootTask()
             DJIMotorSetRef(friction_r, 0);
             break;
         default: // 当前为了调试设定的默认值4000,因为还没有加入裁判系统无法读取弹速.
-            DJIMotorSetRef(friction_l, 30000);
-            DJIMotorSetRef(friction_r, 30000);
+            DJIMotorSetRef(friction_l, 10000);
+            DJIMotorSetRef(friction_r, 10000);
             break;
         }
     }

@@ -52,7 +52,7 @@ static void sbus_to_rc(const uint8_t *sbus_buf)
     rc_ctrl[TEMP].switch_swc = ((sbus_buf[12] | (sbus_buf[13] << 8)) & 0x07FF);            //!< Switch right middle
     rc_ctrl[TEMP].switch_swd = ((sbus_buf[13] >> 3 | (sbus_buf[14] << 5)) & 0x07FF);       //!< Switch right most
 
-    if ((sbus_buf[23] == 0x0C) | (sbus_buf[23] == 0x04) | (sbus_buf[23] == 0x08)) // sbus协议中第24个字节为0x0C表示数据不正常，但是接收器有可能还在发包
+    if ((sbus_buf[23] == 0x0C) || (sbus_buf[23] == 0x04) || (sbus_buf[23] == 0x08)) // sbus协议中第24个字节为0x0C表示数据不正常，但是接收器有可能还在发包
         rc_ctrl[TEMP].online_flag = 0;
     else
         rc_ctrl[TEMP].online_flag = 1;
@@ -103,7 +103,7 @@ RC_ctrl_t *RemoteControlInit(UART_HandleTypeDef *rc_usart_handle)
 
 uint8_t RemoteControlIsOnline()
 {
-    if (rc_init_flag | !rc_ctrl[TEMP].online_flag) // 遥控器尚未初始化或者接收数据出错都视为离线
-        return DaemonIsOnline(rc_daemon_instance);
-    return 0;
+    if (!rc_init_flag || !rc_ctrl[TEMP].online_flag) // 遥控器尚未初始化或者接收数据出错都视为离线
+        return 0;
+    return 1;
 }

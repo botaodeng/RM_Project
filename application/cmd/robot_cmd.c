@@ -121,8 +121,8 @@ void RobotCMDInit()
     CAN_Urgent_Init_Config_s urgent_conf = {
         .can_config = {
             .can_handle = &hcan1,
-            .tx_id = 0x321,
-            .rx_id = 0x322,
+            .tx_id = 0x301,
+            .rx_id = 0x302,
         },
         .role = CANURGENT_ROLE_GIMBAL,
     };
@@ -344,7 +344,7 @@ static void EmergencyHandler()
     #endif //双板模式额外增加一个急停
     */
     // 遥控器右侧开关为[上],恢复正常运行
-    if (switch_is_up(rc_data[TEMP].switch_swd) && switch_is_up(rc_data[TEMP].switch_swa) && switch_is_up(rc_data[TEMP].switch_swb) && RemoteControlIsOnline())
+    if (switch_is_up(rc_data[TEMP].switch_swd) && switch_is_up(rc_data[TEMP].switch_swa) && switch_is_up(rc_data[TEMP].switch_swb) && RemoteControlIsOnline()==1)
     {
         robot_state = ROBOT_READY;
         shoot_cmd_send.shoot_mode = SHOOT_ON;
