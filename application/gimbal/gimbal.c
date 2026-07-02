@@ -6,6 +6,7 @@
 #include "message_center.h"
 #include "general_def.h"
 #include "bmi088.h"
+#include "math.h"
 
 static attitude_t *gimba_IMU_data; // 云台IMU数据
 static DMMotorInstance  *yaw_motor;
@@ -15,6 +16,18 @@ static Publisher_t *gimbal_pub;                   // 云台应用消息发布者
 static Subscriber_t *gimbal_sub;                  // cmd控制消息订阅者
 static Gimbal_Upload_Data_s gimbal_feedback_data; // 回传给cmd的云台状态信息
 static Gimbal_Ctrl_Cmd_s gimbal_cmd_recv;         // 来自cmd的控制信息
+
+static inline float Angle_Limit_180(float angle_deg)
+{
+    angle_deg = fmodf(angle_deg + 180.0f, 360.0f);
+
+    if (angle_deg < 0.0f)
+    {
+        angle_deg += 360.0f;
+    }
+
+    return angle_deg - 180.0f;
+}
 
 // static BMI088Instance *bmi088; // 云台IMU
 void GimbalInit()
@@ -150,7 +163,7 @@ void GimbalTask()
 
     // 设置反馈数据,主要是imu和yaw的ecd
     gimbal_feedback_data.gimbal_imu_data = *gimba_IMU_data;
-    gimbal_feedback_data.yaw_motor_single_round_angle = yaw_motor->measure.position;
+    gimbal_feedback_data.yaw_motor_single_round_angle = Angle_Limit_180(yaw_motor->measure.position);
 
     // 推送消息
     PubPushMessage(gimbal_pub, (void *)&gimbal_feedback_data);
