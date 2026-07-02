@@ -5,13 +5,15 @@
 #include "stdlib.h"
 #include "daemon.h"
 #include "bsp_log.h"
+#include "crc_ref.h"
 
-#define REMOTE_CONTROL_FRAME_SIZE 25u // 遥控器接收的buffer大小
-
+#define REMOTE_CONTROL_FRAME_SIZE 21u // 遥控器接收的buffer大小
+#define CRC_INIT 0xFFFF
+static uint8_t rc_recv_buff[REMOTE_CONTROL_FRAME_SIZE];
 // 遥控器数据
 static RC_ctrl_t rc_ctrl[2];     //[0]:当前数据TEMP,[1]:上一次的数据LAST.用于按键持续按下和切换的判断
 static uint8_t rc_init_flag = 0; // 遥控器初始化标志位
-
+static uint16_t wcrc = 0;
 // 遥控器拥有的串口实例,因为遥控器是单例,所以这里只有一个,就不封装了
 static USARTInstance *rc_usart_instance;
 static DaemonInstance *rc_daemon_instance;
@@ -23,9 +25,11 @@ static DaemonInstance *rc_daemon_instance;
 static void RectifyRCjoystick()
 {
     for (uint8_t i = 0; i < 5; ++i)
-        if (abs(*(&rc_ctrl[TEMP].rocker_l_ + i)) > 800)
+        if (abs(*(&rc_ctrl[TEMP].rocker_l_ + i)) > 700)
             *(&rc_ctrl[TEMP].rocker_l_ + i) = 0;
 }
+
+
 
 /**
  * @brief 遥控器数据解析
@@ -34,30 +38,63 @@ static void RectifyRCjoystick()
  */
 static void sbus_to_rc(const uint8_t *sbus_buf)
 {
-    // 摇杆,直接解算时减去偏置
-    rc_ctrl[TEMP].rocker_r_ = ((sbus_buf[1] | (sbus_buf[2] << 8)) & 0x07ff) - RC_CH_VALUE_OFFSET;                              //!< Channel 0
-    rc_ctrl[TEMP].rocker_l1 = (((sbus_buf[2] >> 3) | (sbus_buf[3] << 5)) & 0x07ff) - RC_CH_VALUE_OFFSET;                       //!< Channel 1
-    rc_ctrl[TEMP].rocker_r1 = (((sbus_buf[3] >> 6) | (sbus_buf[4] << 2) | (sbus_buf[5] << 10)) & 0x07ff) - RC_CH_VALUE_OFFSET; //!< Channel 2
-    rc_ctrl[TEMP].rocker_l_ = (((sbus_buf[5] >> 1) | (sbus_buf[6] << 7)) & 0x07ff) - RC_CH_VALUE_OFFSET;                       //!< Channel 3
-    
-    // VRA VRB,直接解算
-    rc_ctrl[TEMP].vra = (((sbus_buf[6] >> 4) | (sbus_buf[7] << 4)) & 0x07FF) - RC_CH_VALUE_OFFSET;                             //!< Channel 4
-    rc_ctrl[TEMP].vrb = (((sbus_buf[7] >> 7) | (sbus_buf[8] << 1) | (sbus_buf[9] << 9)) & 0x07ff) - RC_CH_VALUE_OFFSET;        //!< Channel 5
-
-    RectifyRCjoystick();
-
-    // 开关
-    rc_ctrl[TEMP].switch_swa = (((sbus_buf[9] >> 2) | (sbus_buf[10] << 6)) & 0x07FF);      //!< Switch left most
-    rc_ctrl[TEMP].switch_swb = (((sbus_buf[10] >> 5) | (sbus_buf[11] << 3)) & 0x07FF);     //!< Switch left middle
-    rc_ctrl[TEMP].switch_swc = ((sbus_buf[12] | (sbus_buf[13] << 8)) & 0x07FF);            //!< Switch right middle
-    rc_ctrl[TEMP].switch_swd = ((sbus_buf[13] >> 3 | (sbus_buf[14] << 5)) & 0x07FF);       //!< Switch right most
-
-    if ((sbus_buf[23] == 0x0C) || (sbus_buf[23] == 0x04) || (sbus_buf[23] == 0x08)) // sbus协议中第24个字节为0x0C表示数据不正常，但是接收器有可能还在发包
+    if(sbus_buf == NULL)
+    {
         rc_ctrl[TEMP].online_flag = 0;
-    else
-        rc_ctrl[TEMP].online_flag = 1;
-    
+        return;
+    }
+
+    uint16_t head = (sbus_buf[0] | (sbus_buf[1] << 8));
+    if(head != 0x53A9){
+        rc_ctrl[TEMP].online_flag = 0;
+        return;
+    }
+
+    uint16_t crc = (sbus_buf[REMOTE_CONTROL_FRAME_SIZE - 2] | (sbus_buf[REMOTE_CONTROL_FRAME_SIZE - 1] << 8));
+    for(int i =0; i < (REMOTE_CONTROL_FRAME_SIZE - 2); ++i)
+        rc_recv_buff[i] = sbus_buf[i];
+    if ((Get_CRC16_Check_Sum(rc_recv_buff, REMOTE_CONTROL_FRAME_SIZE - 2, CRC_INIT) != crc))
+    {
+        return;
+    }
     memcpy(&rc_ctrl[LAST], &rc_ctrl[TEMP], sizeof(RC_ctrl_t)); // 保存上一次的数据,用于按键持续按下和切换的判断
+
+    VTM_data_t *vtm_data = (VTM_data_t *)sbus_buf;
+    rc_ctrl[TEMP].rocker_r_ = (vtm_data->ch_0- 1024.0f) * (1.0f / 660.0f);
+    rc_ctrl[TEMP].rocker_r1 = (vtm_data->ch_1- 1024.0f) * (1.0f / 660.0f);
+    rc_ctrl[TEMP].rocker_l1 = (vtm_data->ch_2- 1024.0f) * (1.0f / 660.0f);
+    rc_ctrl[TEMP].rocker_l_ = (vtm_data->ch_3- 1024.0f) * (1.0f / 660.0f);
+    rc_ctrl[TEMP].mode_sw = vtm_data->mode_sw;
+    rc_ctrl[TEMP].pause = vtm_data->pause;
+    rc_ctrl[TEMP].fn_1 = vtm_data->fn_1;
+    rc_ctrl[TEMP].fn_2 = vtm_data->fn_2;
+    rc_ctrl[TEMP].wheel = (vtm_data->wheel - 1024.0f) * (1.0f / 660.0f);
+    rc_ctrl[TEMP].trigger = vtm_data->trigger;
+
+    rc_ctrl[TEMP].mouse_x = vtm_data->mouse_x;
+    rc_ctrl[TEMP].mouse_y = vtm_data->mouse_y;
+    rc_ctrl[TEMP].mouse_z = vtm_data->mouse_z;
+    rc_ctrl[TEMP].mouse_left = vtm_data->mouse_left;
+    rc_ctrl[TEMP].mouse_right = vtm_data->mouse_right;
+    rc_ctrl[TEMP].mouse_middle = vtm_data->mouse_middle;
+    rc_ctrl[TEMP].key.key_W = vtm_data->key & 0x01;
+    rc_ctrl[TEMP].key.key_S = (vtm_data->key >> 1) & 0x01;
+    rc_ctrl[TEMP].key.key_A = (vtm_data->key >> 2) & 0x01;
+    rc_ctrl[TEMP].key.key_D = (vtm_data->key >> 3) & 0x01;
+    rc_ctrl[TEMP].key.key_Shift = (vtm_data->key >> 4) & 0x01;
+    rc_ctrl[TEMP].key.key_Ctrl = (vtm_data->key >> 5) & 0x01;
+    rc_ctrl[TEMP].key.key_Q = (vtm_data->key >> 6) & 0x01;
+    rc_ctrl[TEMP].key.key_E = (vtm_data->key >> 7) & 0x01;
+    rc_ctrl[TEMP].key.key_R = (vtm_data->key >> 8) & 0x01;
+    rc_ctrl[TEMP].key.key_F = (vtm_data->key >> 9) & 0x01;
+    rc_ctrl[TEMP].key.key_G = (vtm_data->key >> 10) & 0x01;
+    rc_ctrl[TEMP].key.key_Z = (vtm_data->key >> 11) & 0x01;
+    rc_ctrl[TEMP].key.key_X = (vtm_data->key >> 12) & 0x01;
+    rc_ctrl[TEMP].key.key_C = (vtm_data->key >> 13) & 0x01;
+    rc_ctrl[TEMP].key.key_V = (vtm_data->key >> 14) & 0x01;
+    rc_ctrl[TEMP].key.key_B = (vtm_data->key >> 15) & 0x01;
+
+    rc_ctrl[TEMP].online_flag = 1;
 }
 
 /**
