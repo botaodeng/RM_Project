@@ -18,18 +18,18 @@ typedef enum {
 
 /* 云台板 -> 底盘板 指令结构体*/
 typedef struct __attribute__((packed)) {
-    int16_t yaw_angle_ref;
-    int16_t yaw_speed_ref;
-    int16_t yaw_torque_ref;
+    int16_t yaw_angle_ref_10000x;
+    int16_t yaw_speed_ref_1000x;
+    int16_t yaw_torque_ref_1000x;
     uint8_t mode;
     uint8_t seq;
 } YawUrgentCmd_s; // 8 bytes
 
 /* 底盘板 -> 云台板 反馈结构体*/
 typedef struct __attribute__((packed)) {
-    int16_t yaw_motor_angle;
-    int16_t yaw_motor_speed;
-    int16_t yaw_torque;  //DM4310回传torque
+    int16_t yaw_motor_angle_10000x;
+    int16_t yaw_motor_speed_1000x;
+    int16_t yaw_torque_1000x;  //DM4310回传torque
     uint8_t error;
     uint8_t seq;
 } YawUrgentFeedback_s; // 8 bytes

@@ -127,15 +127,7 @@ void DMMotorSetRef(DMMotorInstance *motor, float ref)
 void DMMotorEnable(DMMotorInstance *motor)
 {
     motor->stop_flag = MOTOR_ENALBED;
-    if(motor->enabled_flag == DM_DISABLED)
-    {
-        motor->enabled_flag = DM_ENABLE_REQUEST;
-            if (DWT_GetTimeline_ms() >= DM_ENABLE_DELAY_MS)
-            {
-                DMMotorSetMode(DM_CMD_MOTOR_MODE, motor);
-                motor->enabled_flag = DM_ENABLED;
-            }
-    }
+    DMMotorSetMode(DM_CMD_MOTOR_MODE, motor);
 }
 
 void DMMotorDisable(DMMotorInstance *motor)

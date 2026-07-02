@@ -40,16 +40,16 @@ void ChassisServiceInit()
                 .MaxOut = 200,
             },
             .speed_PID = {
-                .Kp = 1, // 10
-                .Ki = 0, // 1
-                .Kd = 0,
+                .Kp = 40, // 10
+                .Ki = 2, // 1
+                .Kd = 0.01,
                 .Improve = PID_Integral_Limit,
                 .IntegralLimit = 5000,
                 .MaxOut = 5000,
             },
             .current_PID = {
-                .Kp = 0.7, // 0.7
-                .Ki = 0, // 0.1
+                .Kp = 1, // 0.7
+                .Ki = 0.1, // 0.1
                 .Kd = 0,
                 .Improve = PID_Integral_Limit,
                 .IntegralLimit = 5000,
