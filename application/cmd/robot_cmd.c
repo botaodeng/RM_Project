@@ -179,7 +179,7 @@ static void RemoteControlSet()
     }
     else if (switch_is_mid(rc_data[TEMP].switch_swc)) // 右侧开关状态[中],跟随模式
     {
-        chassis_cmd_send.chassis_mode = CHASSIS_FOLLOW_GIMBAL_YAW;
+        //chassis_cmd_send.chassis_mode = CHASSIS_FOLLOW_GIMBAL_YAW;
         gimbal_cmd_send.gimbal_mode = GIMBAL_GYRO_MODE;
     }
 
@@ -192,8 +192,8 @@ static void RemoteControlSet()
     // 左侧开关状态为[下],或视觉未识别到目标,纯遥控器拨杆控制
     if (switch_is_up(rc_data[TEMP].switch_swa) || vision_recv_data->target_state == NO_TARGET)
     { // 按照摇杆的输出大小进行角度增量,增益系数需调整
-        gimbal_cmd_send.yaw += 0.005f * (float)rc_data[TEMP].rocker_r_;
-        gimbal_cmd_send.pitch += 0.001f * (float)rc_data[TEMP].rocker_r1;
+        gimbal_cmd_send.yaw -= 0.005f * (float)rc_data[TEMP].rocker_r_;
+        gimbal_cmd_send.pitch = 0.01f * (float)rc_data[TEMP].rocker_r1;
     }
     // 云台软件限位
 
@@ -344,7 +344,7 @@ static void EmergencyHandler()
     #endif //双板模式额外增加一个急停
     */
     // 遥控器右侧开关为[上],恢复正常运行
-    if (switch_is_up(rc_data[TEMP].switch_swd) && switch_is_up(rc_data[TEMP].switch_swa) && switch_is_up(rc_data[TEMP].switch_swb) && RemoteControlIsOnline()==1)
+    if (switch_is_up(rc_data[TEMP].switch_swd) && switch_is_up(rc_data[TEMP].switch_swa) && switch_is_up(rc_data[TEMP].switch_swb) && RemoteControlIsOnline())
     {
         robot_state = ROBOT_READY;
         shoot_cmd_send.shoot_mode = SHOOT_ON;
@@ -368,7 +368,6 @@ void RobotCMDTask()
 
     // 根据gimbal的反馈值计算云台和底盘正方向的夹角,不需要传参,通过static私有变量完成
     CalcOffsetAngle();
-
     RemoteControlSet();
     /*
     // 根据遥控器左侧开关,确定当前使用的控制模式为遥控器调试还是键鼠

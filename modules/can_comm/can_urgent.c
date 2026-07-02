@@ -173,10 +173,10 @@ void CANUrgentTask()
             return;
         motor_setting = &motor->motor_settings;
         motor_controller = &motor->motor_controller;
-        measure->position = yaw_fb.yaw_motor_angle_10000x/10000.0f;
+        measure->position = yaw_fb.yaw_motor_angle_10000x/10000.0f * 57.295779513f;
         measure->velocity = yaw_fb.yaw_motor_speed_1000x/1000.0f;
         measure->torque = yaw_fb.yaw_torque_1000x/1000.0f;
-        measure->last_position = yaw_fb_last.yaw_motor_angle_10000x/10000.0f;
+        measure->last_position = yaw_fb_last.yaw_motor_angle_10000x/10000.0f * 57.295779513f;
         pid_ref = motor_controller->pid_ref;
 
         // 防止给未使能的电机发送控制信号

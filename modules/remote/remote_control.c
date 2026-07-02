@@ -103,7 +103,7 @@ RC_ctrl_t *RemoteControlInit(UART_HandleTypeDef *rc_usart_handle)
 
 uint8_t RemoteControlIsOnline()
 {
-    if (!rc_init_flag || !rc_ctrl[TEMP].online_flag) // 遥控器尚未初始化或者接收数据出错都视为离线
-        return 0;
-    return 1;
+    if (rc_init_flag || rc_ctrl[TEMP].online_flag) // 遥控器尚未初始化或者接收数据出错都视为离线
+        return DaemonIsOnline(rc_daemon_instance);
+    return 0;
 }
