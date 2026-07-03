@@ -167,7 +167,7 @@ static void CalcOffsetAngle()
 static void RemoteControlSet()
 {
     // 控制底盘和云台运行模式,云台待添加,云台是否始终使用IMU数据?
-    chassis_cmd_send.chassis_mode = CHASSIS_NO_FOLLOW;
+    chassis_cmd_send.chassis_mode = CHASSIS_ROTATE;
     gimbal_cmd_send.gimbal_mode = GIMBAL_GYRO_MODE;
 
     gimbal_cmd_send.yaw -=  (float)rc_data[TEMP].rocker_r_;
@@ -178,6 +178,7 @@ static void RemoteControlSet()
     // 底盘参数,目前没有加入小陀螺(调试似乎暂时没有必要),系数需要调整
     chassis_cmd_send.vx = 9000.0f * (float)rc_data[TEMP].rocker_l_; // _水平方向
     chassis_cmd_send.vy = 9000.0f * (float)rc_data[TEMP].rocker_l1; // 1数值方向
+    chassis_cmd_send.wz = 4000.0f * (float)rc_data[TEMP].wheel;     // 小陀螺
 
     if (rc_data[TEMP].mode_sw ==2)
         shoot_cmd_send.friction_mode = FRICTION_ON;
